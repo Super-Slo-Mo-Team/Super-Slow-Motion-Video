@@ -8,7 +8,7 @@ Team members will use the following process to develop a feature or bug fix.
    * `<initials>‐<name‐of‐feature>`  e.g.  `nd‐dev‐standards`
 2. When you are ready for feedback on your changes, even if they are not ready to be fully reviewed, open a pull request.
 3. When your changes are ready for review, mark your pull request with the yellow  *review*  label. Strive to resolve merge conflicts with *master* before asking for review.
-4. Pull requests require at least **one other teammate** to review and sign off via GitHub pull request approval. Feel free to add an  LGTM ,   ﴾type  :ship: ﴿, or other similar comment in the comment thread so the pull request creator is notified about your approval. 
+4. Pull requests require at least **one other teammate** to review and sign off via GitHub pull request approval. Feel free to add an LGTM, :ship: (`type :ship:`), or other similar comment in the comment thread so the pull request creator is notified about your approval. 
   * Pull requests with systemic or sweeping changes require all teammates to review and sign off.
   * Code review responsibilities should be divided among **all teammates**.
 6. The pull request creator will make any reasonable changes requested by reviewers until the pull request is approved.
