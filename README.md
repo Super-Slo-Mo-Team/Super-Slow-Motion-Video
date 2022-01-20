@@ -1,5 +1,20 @@
 # Super-Slow-Motion-Video
 
+## Goal:
+
+Create an application that allows the user to bring in their video, and use algorithms in order to change the speed of the video to varying speeds, while maintining the best quality possible.
+
+## Logistics:
+
+Team will have mandatory meetings with our client, Brian Thomas, Mondays at 11 am, and with Rex, Wednesdays at 8:40 am.
+
+### Roles:
+Josh: Front End Lead  
+Luka: File Management and Manipulation  
+Max: Algorithm Developer  
+Sean: NVIDIA API Expert  
+
+
 ## Workflow:
 
 Team members will use the following process to develop a feature or bug fix.
