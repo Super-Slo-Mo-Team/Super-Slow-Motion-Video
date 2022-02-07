@@ -35,7 +35,7 @@ class FlowFrame{
 class FlowVideo{
     public:
     FlowVideo(string outPath);
-    vector<FlowFrame> getFlowFrames();
+    FlowFrame getFrame(int index);
 
     private:
     vector<FlowFrame> flowFrames;

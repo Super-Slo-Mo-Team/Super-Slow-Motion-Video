@@ -43,8 +43,8 @@ FlowVideo::FlowVideo(string outPath){
     }
 }
 
-vector<FlowFrame> FlowVideo::getFlowFrames(){
-    return flowFrames;
+FlowFrame FlowVideo::getFrame(int index){
+    return flowFrames.at(index);
 }
 
 
@@ -115,14 +115,12 @@ float Pixel::y(){
  */
 int main(int argc, char *argv[]){
     FlowVideo test("./flowFiles"); //this is the directory name for me locally
-
-    vector<FlowFrame> frames = test.getFlowFrames();
-    FlowFrame frame = frames.at(0);//gets first 
+    FlowFrame frame = test.getFrame(0);//gets first 
     //get each frame with frame.at()
     //while doing work with that frame we want to iterate over pixels
     //p = getPixelAt(x,y), might be useful to build a kernel of pixels with an average flow vector?
     //p.x() & p.y()
-    Pixel p = frame.getPixelAt(10,10);
+    Pixel p = frame.getPixelAt(100,300);
     cout << p.x() << " , " << p.y() << endl;
     
 }
