@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import sys
 class flowReader():
     def __init__(self, path) -> None:
         file = open(path, 'r')
@@ -23,7 +24,7 @@ class flowReader():
         return len(self.flowFrames)
 
 def main():
-    flow = flowReader("output_flow.txt")
+    flow = flowReader(sys.argv[1])
     print(flow.getFlow(0))
     print(flow.getFlow(35))
     print(flow.getFlow(0).shape)
