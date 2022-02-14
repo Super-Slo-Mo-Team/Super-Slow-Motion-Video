@@ -1,3 +1,9 @@
-.DS_Store
-.vscode/
+# ignore C++ compilation executables
+FlowVectors
 FlowVectors.dSYM/
+
+# ignore Mac files
+.DS_Store
+
+# ignore vscode config settings
+.vscode/
