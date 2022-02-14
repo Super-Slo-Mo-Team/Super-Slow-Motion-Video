@@ -1,45 +1,30 @@
-
 #include <string>
 #include <vector>
 
-
 using namespace std;
 
-class Pixel{
+class FlowFrame {
     public:
-    Pixel(float x, float y);
-    float x();
-    float y();
-
-    private:
-    float xVec;
-    float yVec;
-
-};
-class FlowFrame{
-    public:
-    FlowFrame(istream& flowFile,int frameI);
-    
-    Pixel getPixelAt(int x, int y);
+    FlowFrame(istream& flowFile, int frameIndex);
     int getFrameIndex();
+    int getWidth();
+    int getHeight();
+    vector<float> getXFlow();
+    vector<float> getYFlow();
 
     private:
-    int frameNumber;
+    int frameIndex;
     int width;
     int height;
-
-    vector<vector<Pixel> > flowVectors;
-
+    vector<float> xFlow;
+    vector<float> yFlow;
 };
 
-class FlowVideo{
+class FlowVideo {
     public:
-    FlowVideo(string outPath);
-    FlowFrame getFrame(int index);
+    FlowVideo(string floDir);
+    vector<FlowFrame> getFlowFrames();
 
     private:
     vector<FlowFrame> flowFrames;
-    int frameIndx;
-
 };
-
