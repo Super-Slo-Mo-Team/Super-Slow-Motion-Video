@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 
     // write width and height to file
     FlowFrame first = frames.at(0);
-    output << first.getWidth() << ' ' << first.getHeight() << ' ' << frames.size() << '\n';
+    output << frames.size() << ' ' << first.getWidth() << ' ' << first.getHeight() << '\n';
 
     // go through each frame and write to file
     for (vector<FlowFrame>::iterator it = begin(frames); it != end(frames); ++it) {
