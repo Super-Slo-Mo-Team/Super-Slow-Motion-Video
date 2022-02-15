@@ -2,6 +2,9 @@
 FlowVectors
 FlowVectors.dSYM/
 
+# ignore python cache
+__pycache__/
+
 # ignore Mac files
 .DS_Store
 
