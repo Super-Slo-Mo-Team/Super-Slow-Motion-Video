@@ -41,6 +41,12 @@ class FrameReader():
     def getHeight(self):
         return self.frameHeight  
 
-    # TODO: implement
     def getFramesByFirstIndex(self, firstFrameIndex):
-        return None, None
+        I0, I1 = None, None
+
+        with open(self.framePath + '/' + '_%05d.png' % firstFrameIndex, 'rb') as file:
+            I0 = Image.open(file).convert('RGB')
+        with open(self.framePath + '/' + '_%05d.png' % firstFrameIndex + 1, 'rb') as file:
+            I1 = Image.open(file).convert('RGB')
+
+        return I0, I1
