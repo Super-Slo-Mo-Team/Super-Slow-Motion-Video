@@ -52,15 +52,22 @@ def main():
         F_0_1 = torch.cat((xFlow, yFlow), dim = 1)
         F_1_0 = np.negative(F_0_1)
 
-        # retrieve frames
-        I0, I1 = frr.getFramesByFirstIndex(firstFrameIndex)
+        # retrieve frames (1-based index)
+        I0, I1 = frr.getFramesByFirstIndex(firstFrameIndex + 1)
         firstFrameIndex += 1
 
-        # TODO: continue computation
-        print (F_0_1)
-        print (F_1_0)
+        # TODO 1: Consider whether we need transforms on the frames
+        # TODO 2. Develop our own method for approximating intermediate flows
+        # Ft->1 and Ft->0 (can reference repo torch math)
+        # TODO 3: Develop warping function g (This means training a CNN)
+        # TODO 4: Train the arbitrary-time flow interpolation model
+        # (Inputs being 2 frames, intermediate flows, and output of the warping function from the paper)
+        # TODO 5: Implement the math equation to generate I_t
+
         print (I0)
         print (I1)
+        print (F_0_1)
+        print (F_1_0)
 
         # send success reply back to client
         flowReceiver.send_string(RESPONSE_SUCCESS)
