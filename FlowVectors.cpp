@@ -1,44 +1,45 @@
-#include "FlowVectors.h"
-
-
 #include <iostream>
 #include <fstream>
-#include <typeinfo>
 #include <sstream>
+#include <string>
+#include <typeinfo>
 
+#include <zmq.hpp>
+#include <zhelpers.hpp>
+
+#include "FlowVectors.h"
 
 using namespace std;
+
 
 /**
  * @brief Construct a new Flow Frame::Flow Frame object
  *
- * @param flowFile
- * @param frameIndex
+ * @param file
  */
-FlowFrame::FlowFrame(istream& flowFile, int frameIndex) {
-    this->frameIndex = frameIndex;
+FlowFrame::FlowFrame(istream& file, int vectorIndex) {
+    this->vectorIndex = vectorIndex;
     float dummy;
 
-    flowFile.read(reinterpret_cast<char*>(&dummy), sizeof(float));
-    flowFile.read(reinterpret_cast<char*>(&this->width), sizeof(int));
-    flowFile.read(reinterpret_cast<char*>(&this->height), sizeof(int));
+    file.read(reinterpret_cast<char*>(&dummy), sizeof(float));
+    file.read(reinterpret_cast<char*>(&this->width), sizeof(int));
+    file.read(reinterpret_cast<char*>(&this->height), sizeof(int));
 
-    for(int i = 0; i != this->width * this->height; i++){
+    for (int i = 0; i != this->width * this->height; i++) {
         float x, y;
-        flowFile.read(reinterpret_cast<char*>(&x), sizeof(float));
-        flowFile.read(reinterpret_cast<char*>(&y), sizeof(float));
+        file.read(reinterpret_cast<char*>(&x), sizeof(float));
+        file.read(reinterpret_cast<char*>(&y), sizeof(float));
 
-        this->xFlow.push_back(x);
-        this->yFlow.push_back(y);
+        this->xFlow << ',' << x;
+        this->yFlow << ',' << y;
     }
-    cout << xFlow.size() << endl;
 }
 
 /**
  * @brief Get a frame's index
  */
-int FlowFrame::getFrameIndex() {
-    return this->frameIndex;
+int FlowFrame::getVectorIndex() {
+    return this->vectorIndex;
 }
 
 /**
@@ -58,93 +59,80 @@ int FlowFrame::getHeight() {
 /**
  * @brief Return a frame's xFlow
  */
-vector<float> FlowFrame::getXFlow() {
-    return this->xFlow;
-}
-
-
-vector<float> FlowFrame::getYFlow() {
-    return this->yFlow;
+string FlowFrame::getXFlow() {
+    return this->xFlow.str();
 }
 
 /**
- * @brief Construct a new Flow Video::Flow Video object
- *        Iterates over files in given path that fit the middlebury.flo naming
- *        Creates flow Frames from each which are added to a vector of frames: flowFrames
- * @param floDir
+ * @brief Return a frame's yFlow
  */
-FlowVideo::FlowVideo(string floDir){
-    int frameIndex = 0;
-
-    while (true) {
-       stringstream pathBuilder;
-       pathBuilder << floDir << "/" << "_" << setfill('0') << setw(5) << frameIndex << "_" << "middlebury" << ".flo";
-       string flowFile = pathBuilder.str();
-       ifstream file(flowFile, std::ifstream::binary);
-       if (file) {
-           cout << "Reading file:" << flowFile << endl;
-           this->flowFrames.push_back(FlowFrame(file, frameIndex));
-           file.close();
-           frameIndex++;
-       } else {
-           break;
-       }
-   }
-
-    // no file was opened
-   if (!frameIndex) {
-        cout << "No .flo files in directory:" << floDir << endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
-vector<FlowFrame> FlowVideo::getFlowFrames() {
-    return this->flowFrames;
+string FlowFrame::getYFlow() {
+    return this->yFlow.str();
 }
 
 
 /**
- * @brief Construct a new Flow Frame:: Flow Frame object
+ * @brief Process video by constructing frame objects and sending information through IPC
  *   
- * @param flowFile 
- * @param frameI 
+ * @param flowPath
  */
 int main(int argc, char *argv[]) {
-    // create FlowVideo object
-    FlowVideo flowVideo = FlowVideo("./flowFiles");
+    // create context
+    zmq::context_t context(1);
 
-    // retrieve first frame from frames vector
-    vector<FlowFrame> frames = flowVideo.getFlowFrames();
+    // initialize requester socket
+    zmq::socket_t flowRequester(context, ZMQ_REQ);
+    cout << "Connecting client to localhost server on port 8080..." << endl;
+	flowRequester.connect("tcp://localhost:8080");
 
-    // output information into file with the following format:
-    // width height
-    // x vector
-    // y vector
-    // ...
-    // where x's amd y's are separated by spaced
-    // and vectors are separated by newlines
-    ofstream output;
-    stringstream pathBuilder;
-    pathBuilder << "output" << "_flow.txt";
-    string outputFilename = pathBuilder.str();
-    output.open(outputFilename);
+    // preprocess
+    string flowPath = argv[1];
+    int vectorIndex = 0;
 
-    // write width and height to file
-    FlowFrame first = frames.at(0);
-    output << frames.size() << ' ' << first.getWidth() << ' ' << first.getHeight() << '\n';
+    while (1) {
+        // build file path
+        stringstream pathBuilder;
+        pathBuilder << flowPath << "/" << "_" << setfill('0') << setw(5)
+            << vectorIndex << "_" << "middlebury" << ".flo";
+        string filename = pathBuilder.str();
 
-    // go through each frame and write to file
-    for (vector<FlowFrame>::iterator it = begin(frames); it != end(frames); ++it) {
-        vector<float> xFlow = (*it).getXFlow();
-        for (int i = 0; i < xFlow.size(); ++i) {
-            output << xFlow[i] << ' ';
+        // open file
+        ifstream file(filename, std::ifstream::binary);
+
+        // end of flo files
+        if (!file) {
+            if (!vectorIndex) {
+                cout << "No .flo files in directory:" << flowPath << endl;
+                exit(EXIT_FAILURE);
+            } else {
+                break;
+            }
         }
-        output << '\n';
+
+        // create FlowFrame from file
+        cout << "CPP: Reading file:" << filename << endl;
+        FlowFrame flowFrame(file, vectorIndex);
+
+        // close file
+        file.close();
+
+        // idx,width,height,x1,x2,...,xn:y1,y2,...,yn
+        stringstream metadata;
+        metadata << flowFrame.getVectorIndex() << ',' << flowFrame.getWidth()
+            << ',' << flowFrame.getHeight();
+        string msg = metadata.str() + ':' + flowFrame.getXFlow() + ':' + flowFrame.getYFlow();
         
-        vector<float> yFlow = (*it).getYFlow();
-        for (int i = 0; i < yFlow.size(); ++i) {
-            output << xFlow[i] << ' ';
-        }
-        output << '\n';
-    }
+        // send flow data to socket and wait for response
+        s_send(flowRequester, msg);
+        string res = s_recv(flowRequester);
 
+        // continue iteration or retry
+        if (!res.compare("SUCCESS")) {
+            cout << "CPP: Received Success reading " << flowFrame.getVectorIndex() << endl;
+            vectorIndex++;
+        } else if (!res.compare("FAILURE")) {
+            cout << "CPP: Received Failure reading " << flowFrame.getVectorIndex() << endl;
+            continue;
+        }
+    }
+}

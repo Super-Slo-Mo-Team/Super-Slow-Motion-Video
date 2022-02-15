@@ -1,30 +1,22 @@
 #include <string>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
 class FlowFrame {
     public:
-    FlowFrame(istream& flowFile, int frameIndex);
-    int getFrameIndex();
+    FlowFrame(istream& file, int vectorIndex);
+    int getVectorIndex();
     int getWidth();
     int getHeight();
-    vector<float> getXFlow();
-    vector<float> getYFlow();
+    string getXFlow();
+    string getYFlow();
 
     private:
-    int frameIndex;
+    int vectorIndex;
     int width;
     int height;
-    vector<float> xFlow;
-    vector<float> yFlow;
-};
-
-class FlowVideo {
-    public:
-    FlowVideo(string floDir);
-    vector<FlowFrame> getFlowFrames();
-
-    private:
-    vector<FlowFrame> flowFrames;
+    stringstream xFlow;
+    stringstream yFlow;
 };
