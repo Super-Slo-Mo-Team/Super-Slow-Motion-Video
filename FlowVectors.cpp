@@ -92,8 +92,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         // build file path
         stringstream pathBuilder;
-        pathBuilder << flowPath << "/" << "_" << setfill('0') << setw(5)
-            << vectorIndex << "_" << "middlebury" << ".flo";
+        pathBuilder << flowPath << "/_" << setfill('0') << setw(5) << vectorIndex << "_middlebury.flo";
         string filename = pathBuilder.str();
 
         // open file
