@@ -1,4 +1,5 @@
 import sys
+import os
 import zmq
 import torch
 import numpy as np
@@ -8,12 +9,28 @@ RESPONSE_SUCCESS = 'SUCCESS'
 RESPONSE_FAILURE = 'FAILURE'
 
 def main():
+    # temporary directory paths
+    dirPaths = {
+        'root' : './tmp',
+        'rFrames' : './tmp/rawFrames',
+        'iFrames' : './tmp/interpolatedFrames'
+    }
+
+    # TODO: this try catch needs to be removed since the tmp directory will be removed later during runtime
+    try:
+        os.mkdir(dirPaths['root'])
+        os.mkdir(dirPaths['rFrames'])
+        os.mkdir(dirPaths['iFrames'])
+    except:
+        print ('Remove the tmp directory to proceed...')
+
+    # command line arguments
     videoPath = sys.argv[1]
-    framePath = sys.argv[2]
+    slowdown = int(sys.argv[2])
 
     # TODO: will be replaced by Sean's work
-    # create frame reader (generates frames in output directory on init)
-    frr = FrameReader(videoPath, framePath)
+    # create frame reader and generate frames on init
+    frr = FrameReader(videoPath, dirPaths, slowdown)
 
     # create socket connection
     context = zmq.Context()
