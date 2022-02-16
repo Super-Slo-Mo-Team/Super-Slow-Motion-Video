@@ -39,10 +39,10 @@ def main():
     flowReceiver.bind("tcp://*:8080")
 
     firstFrameIndex = 0
-    lastFrameIndex = frr.getFrameCount()
+    lastFrameIndex = frr.getFrameCount() * slowdown
 
     # process two frames at a time
-    while firstFrameIndex < lastFrameIndex - 1:
+    while firstFrameIndex < lastFrameIndex - slowdown:
         # wait for client request
         msg = flowReceiver.recv().decode('utf-8')
         
@@ -52,7 +52,7 @@ def main():
         vectorIndex, vectorWidth, vectorHeight = metadata[0], metadata[1], metadata[2]
 
         # send failure reply back to client
-        if firstFrameIndex != vectorIndex:
+        if firstFrameIndex != vectorIndex * slowdown:
             print ('RECEIVED FLOW VECTORS OUT OF ORDER')
             flowReceiver.send_string(RESPONSE_FAILURE)
             continue
@@ -70,8 +70,8 @@ def main():
         F_1_0 = np.negative(F_0_1)
 
         # retrieve frames (1-based index)
-        I0, I1 = frr.getFramesByFirstIndex(firstFrameIndex + 1)
-        firstFrameIndex += 1
+        I0, I1 = frr.getFramesByFirstIndex(firstFrameIndex)
+        firstFrameIndex += slowdown
 
         # TODO 1: Consider whether we need transforms on the frames
         # TODO 2. Develop our own method for approximating intermediate flows

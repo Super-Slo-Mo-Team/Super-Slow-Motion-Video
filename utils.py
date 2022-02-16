@@ -9,16 +9,17 @@ class FrameReader():
     def __init__(self, videoPath, dirPaths, slowdown):
         self.videoPath = videoPath
         self.dirPaths = dirPaths
+        self.slowdown = slowdown
         self.frameCount = 0
         self.frameWidth = 0
         self.frameHeight = 0
 
-        self.extractVideoFrames(slowdown)
+        self.extractVideoFrames()
 
     # 
     # Function extracts frames from video into output directory using ffmpeg
     #
-    def extractVideoFrames(self, slowdown):
+    def extractVideoFrames(self):
         retval = os.system(f'ffmpeg -i {self.videoPath} -vsync 0 {self.dirPaths["rFrames"]}/_{"%05d"}.png')
         if retval:
             print ("Error converting video file.")
@@ -37,7 +38,7 @@ class FrameReader():
         for _, filename in enumerate(sorted(os.listdir(self.dirPaths["rFrames"]))):
             if filename.endswith('.png'):
                 os.rename(self.dirPaths["rFrames"] + '/' + filename, self.dirPaths["iFrames"] + '/_' + str(index).zfill(5) + '.png')
-                index += slowdown
+                index += self.slowdown
 
     def getFrameCount(self):
         return self.frameCount
@@ -51,9 +52,9 @@ class FrameReader():
     def getFramesByFirstIndex(self, firstFrameIndex):
         I0, I1 = None, None
 
-        with open(self.framePath + '/' + '_%05d.png' % firstFrameIndex, 'rb') as file:
+        with open(self.dirPaths['iFrames'] + '/' + '_%05d.png' % firstFrameIndex, 'rb') as file:
             I0 = Image.open(file).convert('RGB')
-        with open(self.framePath + '/' + '_%05d.png' % firstFrameIndex + 1, 'rb') as file:
+        with open(self.dirPaths['iFrames'] + '/' + '_%05d.png' % (firstFrameIndex + self.slowdown), 'rb') as file:
             I1 = Image.open(file).convert('RGB')
 
         return I0, I1
