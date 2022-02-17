@@ -1,5 +1,6 @@
 import argparse
 import os
+import threading
 import zmq
 import numpy as np
 import torch
@@ -9,7 +10,7 @@ from config import *
 #
 # Program entry point
 #
-def main():
+def generateSlowMotion(fvgEvent):
     # Parser for command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type = str, required = True, help='path of video to be converted')
@@ -36,12 +37,13 @@ def main():
     context = zmq.Context()
     flowReceiver = context.socket(zmq.REP)
     print ('Connecting receiver to localhost server on port 8080...')
-    flowReceiver.bind("tcp://*:8080")
+    flowReceiver.bind('tcp://*:8080')
 
     firstFrameIndex = 0
     lastFrameIndex = frr.getFrameCount() * args.slowdown
 
-    # TODO: invoke ./FlowVectors dirPaths['flo'] on new thread
+    # set event to start flow vector generation thread
+    fvgEvent.set()
 
     # process two frames at a time
     while firstFrameIndex < lastFrameIndex - args.slowdown:
@@ -55,9 +57,11 @@ def main():
 
         # send failure reply back to client
         if firstFrameIndex != vectorIndex * args.slowdown:
-            print ('Received flow vectors out of order. Retrying.')
+            print ('PY: Received flow vectors out of order. Retrying.')
             flowReceiver.send_string(str(RESPONSE_FAILURE))
             continue
+        else:
+            print (f'PY: Received flow vector for idx: {vectorIndex}')
 
         # retrieve xFlow and yFlow
         xFlow = msgSplit[1].split(',')[1:]
@@ -88,11 +92,38 @@ def main():
         firstFrameIndex += args.slowdown
 
     # reconstruct video at specified FPS
-    retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["iFrames"]}/_%05d.png -vcodec ffvhuff {args.output}')
-    if retval:
-        print ("Error creating output video.")
+    # retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["iFrames"]}/_%05d.png -vcodec ffvhuff {args.output}')
+    # if retval:
+    #     print ('Error creating output video.')
 
     # TODO: remove tmp directories
+
+def generateFlowVectors(fvgEvent):
+    if fvgEvent.wait(10):
+        print("Starting flow vector generation...")
+        os.system(f'./FlowVectors {dirPaths["flo"]}')
+    else:
+        print("Frame generation timed out. Exiting")
+        exit(1)
+
+def main():
+    # define flow vector generation trigger
+    fvgEvent = threading.Event()
+
+    # create two threads to trigger flow generation script and slow motion generation script
+    slowmotionThread = threading.Thread(target = generateSlowMotion, args = [fvgEvent])
+    flowVectorsThread = threading.Thread(target = generateFlowVectors, args = [fvgEvent])
+
+    # terminate threads when slow motion generation finishes
+    slowmotionThread.daemon = True
+
+    # start threads
+    slowmotionThread.start()
+    flowVectorsThread.start()
+
+    # finish
+    slowmotionThread.join()
+    print ('Finished creating output video.')
 
 if __name__ == "__main__":
     main()
