@@ -136,7 +136,6 @@ int main(int argc, char *argv[]) {
 
         // continue iteration or retry
         if (res == RESPONSE_SUCCESS) {
-            cout << "CPP: Received Success reading " << flowFrame.getFlowFrameIndex() << endl;
             flowFrameIndex++;
         } else if (res != RESPONSE_FAILURE) {
             cout << "CPP: Received Failure reading " << flowFrame.getFlowFrameIndex() << endl;
