@@ -1,36 +1,36 @@
-import sys
+import argparse
 import os
 import zmq
-import torch
 import numpy as np
+import torch
 from utils import FrameReader
+from config import *
 
-RESPONSE_SUCCESS = 'SUCCESS'
-RESPONSE_FAILURE = 'FAILURE'
-
+#
+# Program entry point
+#
 def main():
-    # temporary directory paths
-    dirPaths = {
-        'root' : './tmp',
-        'rFrames' : './tmp/rawFrames',
-        'iFrames' : './tmp/interpolatedFrames'
-    }
+    # Parser for command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', type = str, required = True, help='path of video to be converted')
+    parser.add_argument('--output', type = str, required = True, help='path of converted video')
+    parser.add_argument('--slowdown', type = int, required = True, help='slows down video by specified factor')
+    parser.add_argument('--FPS', type = int, required = True, help='FPS of output video')
+    args = parser.parse_args()
 
-    # TODO: this try catch needs to be removed since the tmp directory will be removed later during runtime
+    # TODO: integrate with full pipeline
     try:
         os.mkdir(dirPaths['root'])
+        os.mkdir(dirPaths['flo'])
         os.mkdir(dirPaths['rFrames'])
         os.mkdir(dirPaths['iFrames'])
     except:
         print ('Remove the tmp directory to proceed...')
 
-    # command line arguments
-    videoPath = sys.argv[1]
-    slowdown = int(sys.argv[2])
+    # TODO: create frame reader and generate frames on init
+    frr = FrameReader(args.input, args.slowdown)
 
-    # TODO: will be replaced by Sean's work
-    # create frame reader and generate frames on init
-    frr = FrameReader(videoPath, dirPaths, slowdown)
+    # TODO: create models here
 
     # create socket connection
     context = zmq.Context()
@@ -39,10 +39,12 @@ def main():
     flowReceiver.bind("tcp://*:8080")
 
     firstFrameIndex = 0
-    lastFrameIndex = frr.getFrameCount() * slowdown
+    lastFrameIndex = frr.getFrameCount() * args.slowdown
+
+    # TODO: invoke ./FlowVectors dirPaths['flo'] on new thread
 
     # process two frames at a time
-    while firstFrameIndex < lastFrameIndex - slowdown:
+    while firstFrameIndex < lastFrameIndex - args.slowdown:
         # wait for client request
         msg = flowReceiver.recv().decode('utf-8')
         
@@ -52,9 +54,9 @@ def main():
         vectorIndex, vectorWidth, vectorHeight = metadata[0], metadata[1], metadata[2]
 
         # send failure reply back to client
-        if firstFrameIndex != vectorIndex * slowdown:
-            print ('RECEIVED FLOW VECTORS OUT OF ORDER')
-            flowReceiver.send_string(RESPONSE_FAILURE)
+        if firstFrameIndex != vectorIndex * args.slowdown:
+            print ('Received flow vectors out of order. Retrying.')
+            flowReceiver.send_string(str(RESPONSE_FAILURE))
             continue
 
         # retrieve xFlow and yFlow
@@ -69,25 +71,28 @@ def main():
         F_0_1 = torch.cat((xFlow, yFlow), dim = 1)
         F_1_0 = np.negative(F_0_1)
 
-        # retrieve frames (1-based index)
+        # retrieve frames and load them into tensors
         I0, I1 = frr.getFramesByFirstIndex(firstFrameIndex)
-        firstFrameIndex += slowdown
+        I0, I1 = I0.to('cpu'), I1.to('cpu')
 
-        # TODO 1: Consider whether we need transforms on the frames
-        # TODO 2. Develop our own method for approximating intermediate flows
-        # Ft->1 and Ft->0 (can reference repo torch math)
-        # TODO 3: Develop warping function g (This means training a CNN)
-        # TODO 4: Train the arbitrary-time flow interpolation model
-        # (Inputs being 2 frames, intermediate flows, and output of the warping function from the paper)
-        # TODO 5: Implement the math equation to generate I_t
-
-        print (I0)
-        print (I1)
-        print (F_0_1)
-        print (F_1_0)
+        # Generate intermediate frames
+        for i in range(1, args.slowdown):
+            # TODO: Consider whether we need transforms on the frames
+            # TODO: perform calculations
+            pass
 
         # send success reply back to client
-        flowReceiver.send_string(RESPONSE_SUCCESS)
+        flowReceiver.send_string(str(RESPONSE_SUCCESS))
+
+        # increment firstFrameIndex
+        firstFrameIndex += args.slowdown
+
+    # reconstruct video at specified FPS
+    retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["iFrames"]}/_%05d.png -vcodec ffvhuff {args.output}')
+    if retval:
+        print ("Error creating output video.")
+
+    # TODO: remove tmp directories
 
 if __name__ == "__main__":
     main()
