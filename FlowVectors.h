@@ -6,15 +6,15 @@ using namespace std;
 
 class FlowFrame {
     public:
-    FlowFrame(istream& file, int vectorIndex);
-    int getVectorIndex();
+    FlowFrame(istream& file, int flowFrameIndex);
+    int getFlowFrameIndex();
     int getWidth();
     int getHeight();
     string getXFlow();
     string getYFlow();
 
     private:
-    int vectorIndex;
+    int flowFrameIndex;
     int width;
     int height;
     stringstream xFlow;

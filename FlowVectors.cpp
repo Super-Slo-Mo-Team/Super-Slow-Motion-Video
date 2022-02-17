@@ -9,6 +9,9 @@
 
 #include "FlowVectors.h"
 
+#define RESPONSE_SUCCESS 0
+#define RESPONSE_FAILURE 1
+
 using namespace std;
 
 
@@ -16,9 +19,10 @@ using namespace std;
  * @brief Construct a new Flow Frame::Flow Frame object
  *
  * @param file
+ * @param flowFrameIndex
  */
-FlowFrame::FlowFrame(istream& file, int vectorIndex) {
-    this->vectorIndex = vectorIndex;
+FlowFrame::FlowFrame(istream& file, int flowFrameIndex) {
+    this->flowFrameIndex = flowFrameIndex;
     float dummy;
 
     file.read(reinterpret_cast<char*>(&dummy), sizeof(float));
@@ -38,8 +42,8 @@ FlowFrame::FlowFrame(istream& file, int vectorIndex) {
 /**
  * @brief Get a frame's index
  */
-int FlowFrame::getVectorIndex() {
-    return this->vectorIndex;
+int FlowFrame::getFlowFrameIndex() {
+    return this->flowFrameIndex;
 }
 
 /**
@@ -77,6 +81,11 @@ string FlowFrame::getYFlow() {
  * @param flowPath
  */
 int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        cout << "Incorrect invocation. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
+
     // create context
     zmq::context_t context(1);
 
@@ -87,12 +96,12 @@ int main(int argc, char *argv[]) {
 
     // preprocess
     string flowPath = argv[1];
-    int vectorIndex = 0;
+    int flowFrameIndex = 0;
 
     while (1) {
         // build file path
         stringstream pathBuilder;
-        pathBuilder << flowPath << "/_" << setfill('0') << setw(5) << vectorIndex << "_middlebury.flo";
+        pathBuilder << flowPath << "/_" << setfill('0') << setw(5) << flowFrameIndex << ".flo";
         string filename = pathBuilder.str();
 
         // open file
@@ -100,8 +109,8 @@ int main(int argc, char *argv[]) {
 
         // end of flo files
         if (!file) {
-            if (!vectorIndex) {
-                cout << "No .flo files in directory:" << flowPath << endl;
+            if (!flowFrameIndex) {
+                cout << "No .flo files in directory: " << flowPath << ". Exiting." << endl;
                 exit(EXIT_FAILURE);
             } else {
                 break;
@@ -110,27 +119,27 @@ int main(int argc, char *argv[]) {
 
         // create FlowFrame from file
         cout << "CPP: Reading file:" << filename << endl;
-        FlowFrame flowFrame(file, vectorIndex);
+        FlowFrame flowFrame(file, flowFrameIndex);
 
         // close file
         file.close();
 
         // idx,width,height,x1,x2,...,xn:y1,y2,...,yn
         stringstream metadata;
-        metadata << flowFrame.getVectorIndex() << ',' << flowFrame.getWidth()
+        metadata << flowFrame.getFlowFrameIndex() << ',' << flowFrame.getWidth()
             << ',' << flowFrame.getHeight();
         string msg = metadata.str() + ':' + flowFrame.getXFlow() + ':' + flowFrame.getYFlow();
         
         // send flow data to socket and wait for response
         s_send(flowRequester, msg);
-        string res = s_recv(flowRequester);
+        int res = stoi(s_recv(flowRequester));
 
         // continue iteration or retry
-        if (!res.compare("SUCCESS")) {
-            cout << "CPP: Received Success reading " << flowFrame.getVectorIndex() << endl;
-            vectorIndex++;
-        } else if (!res.compare("FAILURE")) {
-            cout << "CPP: Received Failure reading " << flowFrame.getVectorIndex() << endl;
+        if (res == RESPONSE_SUCCESS) {
+            cout << "CPP: Received Success reading " << flowFrame.getFlowFrameIndex() << endl;
+            flowFrameIndex++;
+        } else if (res != RESPONSE_FAILURE) {
+            cout << "CPP: Received Failure reading " << flowFrame.getFlowFrameIndex() << endl;
             continue;
         }
     }
