@@ -10,3 +10,10 @@ __pycache__/
 
 # ignore vscode config settings
 .vscode/
+
+# ignore project dependent filenames
+*.mp4
+*.y4m
+*.mkv
+*.ckpt
+tmp/*
