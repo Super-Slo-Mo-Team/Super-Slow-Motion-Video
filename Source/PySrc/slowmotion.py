@@ -4,8 +4,10 @@ import threading
 import zmq
 import numpy as np
 import torch
+from torchvision import transforms
 from utils import FrameReader
 from config import *
+import model as model
 
 #
 # Program entry point
@@ -19,19 +21,22 @@ def generateSlowMotion(fvgEvent):
     parser.add_argument('--FPS', type = int, required = True, help='FPS of output video')
     args = parser.parse_args()
 
-    # TODO: integrate with full pipeline
-    try:
-        os.mkdir(dirPaths['root'])
-        os.mkdir(dirPaths['flo'])
-        os.mkdir(dirPaths['rFrames'])
-        os.mkdir(dirPaths['iFrames'])
-    except:
-        print ('Remove the tmp directory to proceed...')
 
     # TODO: create frame reader and generate frames on init
     frr = FrameReader(args.input, args.slowdown)
-
     # TODO: create models here
+
+    
+    ArbTimeFlowIntrp = model.UNet(20, 5)
+    ArbTimeFlowIntrp.to('cpu')
+    for param in ArbTimeFlowIntrp.parameters():
+        param.requires_grad = False
+
+    flowBackWarp = model.backWarp(frr.getWidth(), frr.getHeight(), 'cpu')
+    flowBackWarp = flowBackWarp.to('cpu')
+
+    dict1 = torch.load(f'{ROOT}/SuperSloMo.ckpt', map_location='cpu')
+    ArbTimeFlowIntrp.load_state_dict(dict1['state_dictAT'])
 
     # create socket connection
     context = zmq.Context()
@@ -83,7 +88,33 @@ def generateSlowMotion(fvgEvent):
         for i in range(1, args.slowdown):
             # TODO: Consider whether we need transforms on the frames
             # TODO: perform calculations
-            pass
+            t = float(i) / args.slowdown
+            temp = -t * (1 - t)
+            fCoeff = [temp, t * t, (1 - t) * (1 - t), temp]
+
+            F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
+            F_t_1 = fCoeff[2] * F_0_1 + fCoeff[3] * F_1_0
+
+            g_I0_F_t_0 = flowBackWarp(I0, F_t_0)
+            g_I1_F_t_1 = flowBackWarp(I1, F_t_1)
+
+            intrpOut = ArbTimeFlowIntrp(torch.cat((I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0), dim=1))
+
+            F_t_0_f = intrpOut[:, :2, :, :] + F_t_0
+            F_t_1_f = intrpOut[:, 2:4, :, :] + F_t_1
+            V_t_0   = torch.sigmoid(intrpOut[:, 4:5, :, :])
+            V_t_1   = 1 - V_t_0
+
+            g_I0_F_t_0_f = flowBackWarp(I0, F_t_0_f)
+            g_I1_F_t_1_f = flowBackWarp(I1, F_t_1_f)
+
+            wCoeff = [1 - t, t]
+
+            Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
+
+            # Save intermediate frame
+            interpolatedFrame = transforms.ToPILImage()(Ft_p[0].squeeze_(0))
+            interpolatedFrame.save(dirPaths['TMP'] + '/_%05d.png' % (firstFrameIndex + i))
 
         # send success reply back to client
         flowReceiver.send_string(str(RESPONSE_SUCCESS))
@@ -92,16 +123,19 @@ def generateSlowMotion(fvgEvent):
         firstFrameIndex += args.slowdown
 
     # reconstruct video at specified FPS
-    # retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["iFrames"]}/_%05d.png -vcodec ffvhuff {args.output}')
-    # if retval:
-    #     print ('Error creating output video.')
+    retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["TMP"]}/_%05d.png -vcodec ffvhuff {args.output}')
+    
+    #clean up temp directory
+    os.system(f'rm -r {dirPaths["TMP"]}/*')
+    if retval:
+        print ('Error creating output video.')
 
     # TODO: remove tmp directories
 
 def generateFlowVectors(fvgEvent):
     if fvgEvent.wait(10):
         print("Starting flow vector generation...")
-        os.system(f'./FlowVectors {dirPaths["flo"]}')
+        os.system(f'{ROOT}/Source/CPPSrc/FlowVectors {dirPaths["FLO"]}')
     else:
         print("Frame generation timed out. Exiting")
         exit(1)

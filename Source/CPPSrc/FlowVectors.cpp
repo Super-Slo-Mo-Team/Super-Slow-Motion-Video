@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
         stringstream pathBuilder;
         pathBuilder << flowPath << "/_" << setfill('0') << setw(5) << flowFrameIndex << ".flo";
         string filename = pathBuilder.str();
-
         // open file
         ifstream file(filename, std::ifstream::binary);
 
