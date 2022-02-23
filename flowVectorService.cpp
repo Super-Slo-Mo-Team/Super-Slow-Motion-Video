@@ -7,7 +7,8 @@
 using namespace std;
 
 /**
- * @brief Create service object to handle returning FlowVectorFrame objects parsed from .flo files
+ * @brief Create a FlowVectorService::FlowVectorService object to handle returning
+ * FlowVectorFrame objects parsed from flow files over TCP
  *   
  * @param flo_path pointing to directory containing .flo files
  */
@@ -24,12 +25,15 @@ FlowVectorService::FlowVectorService(string flo_path) {
     this->flo_path = flo_path;
 }
 
+/**
+ * @brief Create a forever loop listening for requests to load a specific flow frame
+ */
 void FlowVectorService::startService() {
     while (1) {
         // listen to incoming requests
         int frame_index = stoi(s_recv(*flow_requester));
 
-        // output progress
+        // output received request
         if (frame_index == -1) {
             cout << "FVS: Received request to break " << endl;
             break;
@@ -56,6 +60,7 @@ void FlowVectorService::startService() {
  * @brief Construct a frame object to be sent through IPC
  *   
  * @param frame_index denoting which flow frame to retrieve
+ * @param buffer_frame containing reference to flowFrame object where information will be loaded
  */
 void FlowVectorService::createFlowVectorFrame(int frame_index, unique_ptr<FlowVectorFrame> &buffer_frame) {
     // build file path using frame_index

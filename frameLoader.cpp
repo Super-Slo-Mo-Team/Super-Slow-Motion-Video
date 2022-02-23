@@ -2,6 +2,12 @@
 
 #include <iostream>
 
+/**
+ * @brief Construct a new FrameLoader::FrameLoader object
+ *
+ * @param input_path specifying path to input video file
+ * @param slowmo_factor specifying how much the input video needs to be slowed down by
+ */
 FrameLoader::FrameLoader(string input_path, int slowmo_factor) {
     this->input_path = input_path;
     this->slowmo_factor = slowmo_factor;
@@ -12,6 +18,9 @@ FrameLoader::FrameLoader(string input_path, int slowmo_factor) {
     extractVideoFrames();
 }
 
+/**
+ * @brief Extract individual frames from video
+ */
 void FrameLoader::extractVideoFrames() {
     // extract frames from video
     // string ffmpeg_command = sprintf("ffmpeg -i %s -vsync 0 %s/_%05d.png", input_path.c_str(), R_FRAME_PATH.c_str());

@@ -5,8 +5,8 @@ using namespace std;
 /**
  * @brief Construct a new FlowVectorFrame::FlowVectorFrame object from a .flo file
  *
- * @param file
- * @param frame_index
+ * @param file containing unparsed flow vector information
+ * @param frame_index denoting the frame
  */
 FlowVectorFrame::FlowVectorFrame(istream& file, int frame_index) {
     this->frame_index = frame_index;
@@ -34,28 +34,28 @@ int FlowVectorFrame::getFrameIndex() {
 }
 
 /**
- * @brief Return a frame's xFlow
+ * @brief Get a frame's width
  */
 int FlowVectorFrame::getWidth() {
     return this->width;
 }
 
 /**
- * @brief Return a frame's xFlow
+ * @brief Get a frame's height
  */
 int FlowVectorFrame::getHeight() {
     return this->height;
 }
 
 /**
- * @brief Return a frame's xFlow
+ * @brief Get a frame's xFlow
  */
 string FlowVectorFrame::getXFlow() {
     return this->xFlow.str();
 }
 
 /**
- * @brief Return a frame's yFlow
+ * @brief Get a frame's yFlow
  */
 string FlowVectorFrame::getYFlow() {
     return this->yFlow.str();

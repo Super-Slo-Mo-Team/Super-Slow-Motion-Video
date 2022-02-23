@@ -6,6 +6,15 @@
 
 using namespace std;
 
+/**
+ * @brief Create a SlowMotionService::SlowMotionService object to handle all operations required for
+ * interpolated frame generation
+ *
+ * @param input_path specifying path to input video file
+ * @param slowmo_factor specifying how much the input video needs to be slowed down by
+ * @param output_fps specifying fps of output video
+ * @param output_path specifying path to output video file
+ */
 SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int output_fps, string output_path) {
     // create context
     this->context = make_unique<zmq::context_t>(1);
@@ -29,6 +38,9 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
     // TODO: create models
 }
 
+/**
+ * @brief Process video frames in pairs and created interpolated frames
+ */
 void SlowMotionService::startService() {
     int first_frame_index = 0;
     int last_frame_index = frameLoader.getFrameCount() * slowmo_factor;
