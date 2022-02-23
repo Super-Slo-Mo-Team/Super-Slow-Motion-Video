@@ -1,4 +1,5 @@
 #include "slowMotionService.hpp"
+#include "frameLoader.hpp"
 
 #include <zhelpers.hpp>
 #include <iostream>
@@ -22,17 +23,15 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
 
     // TODO: mkdir tmps
 
-    // TODO: create frame reader form input_path and slowmo_factor
+    // create frame reader to interface directly with video frames
+    FrameLoader frameLoader = FrameLoader(input_path, slowmo_factor);
 
     // TODO: create models
 }
 
-// TODO: rewrite this method
 void SlowMotionService::startService() {
     int first_frame_index = 0;
-    // TODO
-    // lastFrameIndex = frr.getFrameCount() * args.slowdown
-    int last_frame_index = 20;
+    int last_frame_index = frameLoader.getFrameCount() * slowmo_factor;
 
     while (first_frame_index < last_frame_index) {
         // send request with frame number
@@ -41,15 +40,15 @@ void SlowMotionService::startService() {
         // receive flow vector message
         string msg = s_recv(*flow_requester);
 
-        cout << "received " << msg[0] << msg[1] << endl;
-
-        // TODO: decode msg
+        // TODO: decode msg and check its legitimacy
 
         // TODO: process msg
 
+        // TODO: retrieve frames and load them into tensors
+
         // TODO: make intermediate frames
 
-        first_frame_index++;
+        first_frame_index += slowmo_factor;
     }
 
     // send termination request
@@ -57,5 +56,4 @@ void SlowMotionService::startService() {
 
     // TODO: reconstruct video
 
-    return;
 }
