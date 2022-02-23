@@ -51,6 +51,9 @@ class FrameReader():
                 os.rename(src, dst)
                 index += self.slowdown
 
+
+
+    ##No longer in use for now.
     def extractVideoFrames(self):
         retval = os.system(f'ffmpeg -i {self.videoPath} -vsync 0 {dirPaths["FRAME"]}/f_{"%05d"}.png')#### added f to these frames
         if retval:
