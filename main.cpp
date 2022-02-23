@@ -3,15 +3,20 @@
 #include "slowMotionService.hpp"
 
 #include <thread>
+#include <iostream>
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    // TODO: use arguments
-    string input_path = "./input.y4m";
-    int output_fps = 60;
-    int slowmo_factor = 2;
-    string output_path = "./output.mkv";
+    if (argc != 5) {
+        cout << "Incorrect number of arguments. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    string input_path = argv[1];
+    int output_fps = stoi(argv[2]);
+    int slowmo_factor = stoi(argv[3]);
+    string output_path = argv[4];
 
     // initialize services
     FlowVectorService fvs = FlowVectorService(FLO_PATH);
@@ -24,4 +29,6 @@ int main(int argc, char* argv[]) {
     // terminate program upon completion
     slowmo_service_thread.join();
     flow_service_thread.join();
+
+    return EXIT_SUCCESS;
 }

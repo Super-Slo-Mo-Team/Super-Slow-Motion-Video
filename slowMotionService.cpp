@@ -33,7 +33,7 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
     // TODO: mkdir tmps
 
     // create frame reader to interface directly with video frames
-    FrameLoader frameLoader = FrameLoader(input_path, slowmo_factor);
+    this->frame_loader = make_unique<FrameLoader>(input_path, slowmo_factor);
 
     // TODO: create models
 }
@@ -43,7 +43,7 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
  */
 void SlowMotionService::startService() {
     int first_frame_index = 0;
-    int last_frame_index = frameLoader.getFrameCount() * slowmo_factor;
+    int last_frame_index = frame_loader->getFrameCount() * slowmo_factor;
 
     while (first_frame_index < last_frame_index) {
         // send request with frame number

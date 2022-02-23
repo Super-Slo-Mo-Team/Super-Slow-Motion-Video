@@ -1,5 +1,5 @@
 TARGET	:= slowmotion
-OBJS	:= flowVectorFrame.o flowVectorService.o slowMotionService.o main.o
+OBJS	:= flowVectorFrame.o flowVectorService.o slowMotionService.o frameLoader.o main.o
 
 CC 		:= g++
 CFLAGS 	:= -Wall -std=c++14 -Wno-nullability-completeness

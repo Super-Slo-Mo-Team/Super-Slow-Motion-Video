@@ -84,4 +84,5 @@ int getFramesByFirstIndex(int first_frame_index) {
     // I1 = transforms.ToTensor()(I1).unsqueeze_(0)
 
     // return I0, I1
+    return 0;
 }
