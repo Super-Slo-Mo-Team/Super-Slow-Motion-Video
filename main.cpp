@@ -14,12 +14,12 @@ int main(int argc, char* argv[]) {
     }
 
     string input_path = argv[1];
-    int output_fps = stoi(argv[2]);
-    int slowmo_factor = stoi(argv[3]);
+    int slowmo_factor = stoi(argv[2]);
+    int output_fps = stoi(argv[3]);
     string output_path = argv[4];
 
     // initialize services
-    FlowVectorService fvs = FlowVectorService(FLO_PATH);
+    FlowVectorService fvs = FlowVectorService();
     SlowMotionService sms = SlowMotionService(input_path, slowmo_factor, output_fps, output_path);
 
     // create threads with appropriate entry points

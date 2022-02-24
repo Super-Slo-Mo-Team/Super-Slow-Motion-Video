@@ -1,4 +1,5 @@
 #include "flowVectorService.hpp"
+#include "config.hpp"
 
 #include <zhelpers.hpp>
 #include <iostream>
@@ -9,10 +10,8 @@ using namespace std;
 /**
  * @brief Create a FlowVectorService::FlowVectorService object to handle returning
  * FlowVectorFrame objects parsed from flow files over TCP
- *   
- * @param flo_path pointing to directory containing .flo files
  */
-FlowVectorService::FlowVectorService(string flo_path) {
+FlowVectorService::FlowVectorService() {
     // create context
     this->context = make_unique<zmq::context_t>(1);
 
@@ -20,9 +19,6 @@ FlowVectorService::FlowVectorService(string flo_path) {
     this->flow_requester = make_unique<zmq::socket_t>(*context, ZMQ_REP);
     cout << "FVS: Binding responder to tcp://127.0.0.1:5555..." << endl;
 	flow_requester->bind("tcp://127.0.0.1:5555");
-
-    // initialize flo path
-    this->flo_path = flo_path;
 }
 
 /**
@@ -65,7 +61,7 @@ void FlowVectorService::startService() {
 void FlowVectorService::createFlowVectorFrame(int frame_index, unique_ptr<FlowVectorFrame> &buffer_frame) {
     // build file path using frame_index
     stringstream path_builder;
-    path_builder << flo_path << "/_" << setfill('0') << setw(5) << frame_index << ".flo";
+    path_builder << FLO_PATH << "/_" << setfill('0') << setw(5) << frame_index << ".flo";
     string filename = path_builder.str();
 
     // open file
@@ -73,7 +69,7 @@ void FlowVectorService::createFlowVectorFrame(int frame_index, unique_ptr<FlowVe
 
     // error
     if (!file) {
-        cout << "FVS: No flo file with index " << frame_index << " in directory: " << flo_path << ". Exiting." << endl;
+        cout << "FVS: No flo file with index " << frame_index << " in directory: " << FLO_PATH << ". Exiting." << endl;
         exit(EXIT_FAILURE);
     }
 
