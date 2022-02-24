@@ -1,5 +1,5 @@
 #include "slowMotionService.hpp"
-#include "frameLoader.hpp"
+#include "videoProcessor.hpp"
 
 #include <zhelpers.hpp>
 #include <iostream>
@@ -30,10 +30,8 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
     this->output_fps = output_fps;
     this->output_path = output_path;
 
-    // TODO: mkdir tmps
-
     // create frame reader to interface directly with video frames
-    this->frame_loader = make_unique<FrameLoader>(input_path, slowmo_factor);
+    this->video_processor = make_unique<VideoProcessor>(input_path, slowmo_factor);
 
     // TODO: create models
 }
@@ -43,7 +41,7 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
  */
 void SlowMotionService::startService() {
     int first_frame_index = 0;
-    int last_frame_index = frame_loader->getFrameCount() * slowmo_factor;
+    int last_frame_index = video_processor->getVideoFrameCount() * slowmo_factor;
 
     while (first_frame_index < last_frame_index) {
         // send request with frame number

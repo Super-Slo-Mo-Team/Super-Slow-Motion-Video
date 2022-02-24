@@ -2,7 +2,7 @@
 #define SLOW_MOTION_SERVICE_HPP
 
 #include "flowVectorFrame.hpp"
-#include "frameLoader.hpp"
+#include "videoProcessor.hpp"
 
 #include <zmq.hpp>
 #include <memory>
@@ -18,7 +18,7 @@ class SlowMotionService {
         unique_ptr<zmq::context_t> context;
         unique_ptr<zmq::socket_t> flow_requester;
         unique_ptr<FlowVectorFrame> buffer_frame;
-        unique_ptr<FrameLoader> frame_loader;
+        unique_ptr<VideoProcessor> video_processor;
     public:
         SlowMotionService(string input_path, int slowmo_factor, int output_fps, string output_path);
         void startService();
