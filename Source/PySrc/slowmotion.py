@@ -6,9 +6,10 @@ import numpy as np
 import torch
 from torchvision import transforms
 from utils import FrameReader
+from utils import removeDir
 from config import *
 import model as model
-
+from pathlib import Path
 #
 # Program entry point
 #
@@ -20,7 +21,14 @@ def generateSlowMotion(fvgEvent):
     parser.add_argument('--slowdown', type = int, required = True, help='slows down video by specified factor')
     parser.add_argument('--FPS', type = int, required = True, help='FPS of output video')
     args = parser.parse_args()
-
+    print(os.path.exists(dirPaths["FRAME"]))
+   
+    if not os.path.exists(dirPaths["FRAME"]):
+        os.makedirs(dirPaths["FRAME"])
+    if not os.path.exists(dirPaths["OUT"]):
+        os.makedirs(dirPaths["OUT"])
+    if not os.path.exists(dirPaths["FLO"]):
+        os.makedirs(dirPaths["FLO"])
 
     # TODO: create frame reader and generate frames on init
     frr = FrameReader(args.input, args.slowdown)
@@ -35,7 +43,7 @@ def generateSlowMotion(fvgEvent):
     flowBackWarp = model.backWarp(frr.getWidth(), frr.getHeight(), 'cpu')
     flowBackWarp = flowBackWarp.to('cpu')
 
-    dict1 = torch.load(f'{ROOT}/SuperSloMo.ckpt', map_location='cpu')
+    dict1 = torch.load(Path(f'{ROOT}/SuperSloMo.ckpt'), map_location='cpu')
     ArbTimeFlowIntrp.load_state_dict(dict1['state_dictAT'])
 
     # create socket connection
@@ -46,20 +54,18 @@ def generateSlowMotion(fvgEvent):
 
     firstFrameIndex = 0
     lastFrameIndex = frr.getFrameCount() * args.slowdown
-
     # set event to start flow vector generation thread
     fvgEvent.set()
-
+    
     # process two frames at a time
     while firstFrameIndex < lastFrameIndex - args.slowdown:
         # wait for client request
         msg = flowReceiver.recv().decode('utf-8')
-        
         # retrieve message metadata
         msgSplit = msg.split(':')
         metadata = [int(x) for x in msgSplit[0].split(',')]
         vectorIndex, vectorWidth, vectorHeight = metadata[0], metadata[1], metadata[2]
-
+        
         # send failure reply back to client
         if firstFrameIndex != vectorIndex * args.slowdown:
             print ('PY: Received flow vectors out of order. Retrying.')
@@ -114,7 +120,8 @@ def generateSlowMotion(fvgEvent):
 
             # Save intermediate frame
             interpolatedFrame = transforms.ToPILImage()(Ft_p[0].squeeze_(0))
-            interpolatedFrame.save(dirPaths['TMP'] + '/_%05d.png' % (firstFrameIndex + i))
+            path = Path(f'{dirPaths["TMP"]}/_')
+            interpolatedFrame.save(f'{path}%05d.png' % (firstFrameIndex + i))
 
         # send success reply back to client
         flowReceiver.send_string(str(RESPONSE_SUCCESS))
@@ -123,10 +130,11 @@ def generateSlowMotion(fvgEvent):
         firstFrameIndex += args.slowdown
 
     # reconstruct video at specified FPS
-    retval = os.system(f'ffmpeg -r {args.FPS} -i {dirPaths["TMP"]}/_%05d.png -vcodec ffvhuff {args.output}')
-    
+    path = Path(f'{dirPaths["TMP"]}/_')
+    retval = os.system(f'ffmpeg -r {args.FPS} -i {path}%05d.png -vcodec ffvhuff {args.output}')
     #clean up temp directory
-    os.system(f'rm -r {dirPaths["TMP"]}/*')
+    path = Path(f'./{dirPaths["TMP"]}')
+    removeDir(path)
     if retval:
         print ('Error creating output video.')
 
@@ -135,7 +143,8 @@ def generateSlowMotion(fvgEvent):
 def generateFlowVectors(fvgEvent):
     if fvgEvent.wait(10):
         print("Starting flow vector generation...")
-        os.system(f'{ROOT}/Source/CPPSrc/FlowVectors {dirPaths["FLO"]}')
+        path = Path(f'{ROOT}/Source/CPPSrc/FlowVectors {dirPaths["FLO"]}')
+        os.system(path)
     else:
         print("Frame generation timed out. Exiting")
         exit(1)
