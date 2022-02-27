@@ -21,8 +21,8 @@ FlowVectorFrame::FlowVectorFrame(istream& file, int frame_index) {
         file.read(reinterpret_cast<char*>(&x), sizeof(float));
         file.read(reinterpret_cast<char*>(&y), sizeof(float));
 
-        this->xFlow << ',' << x;
-        this->yFlow << ',' << y;
+        this->xFlow.push_back(x);
+        this->yFlow.push_back(y);
     }
 }
 
@@ -50,13 +50,13 @@ int FlowVectorFrame::getHeight() {
 /**
  * @brief Get a frame's xFlow
  */
-string FlowVectorFrame::getXFlow() {
-    return this->xFlow.str();
+vector<float> FlowVectorFrame::getXFlow() {
+    return this->xFlow;
 }
 
 /**
  * @brief Get a frame's yFlow
  */
-string FlowVectorFrame::getYFlow() {
-    return this->yFlow.str();
+vector<float> FlowVectorFrame::getYFlow() {
+    return this->yFlow;
 }

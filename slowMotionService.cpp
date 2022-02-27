@@ -47,16 +47,24 @@ void SlowMotionService::startService() {
         // send request with frame number
         s_send(*flow_requester, to_string(first_frame_index));
         
-        // receive flow vector message
-        string msg = s_recv(*flow_requester);
+        // receive message
+        string serialized_msg = s_recv(*flow_requester);
 
-        // TODO: decode msg and check its legitimacy
+        // deserialize message into FlowVectorFrame
+        FlowVectorFrame buffer_frame;
+        stringstream msg(serialized_msg);
+        boost::archive::text_iarchive deserializer(msg);
+        deserializer >> buffer_frame;
 
-        // TODO: process msg
+        // wrong object received
+        if (first_frame_index != buffer_frame.getFrameIndex()) {
+            cout << "SMS: Received flow vectors out of order. Retrying." << endl;
+            continue;
+        }
 
-        // TODO: retrieve frames and load them into tensors
+        // TODO: generate F_0_1, F_1_0, I0, and I1
 
-        // TODO: make intermediate frames
+        // TODO: generate intermediate frames
 
         first_frame_index += slowmo_factor;
     }

@@ -40,15 +40,14 @@ void FlowVectorService::startService() {
         // generate flow frame to be sent over IPC
         createFlowVectorFrame(frame_index, buffer_frame);
         
-        // compose message with following format:
-        // frame_index,width,height:x1,x2,...,xn:y1,y2,...,yn
-        stringstream metadata;
-        metadata << buffer_frame->getFrameIndex() << ',' << buffer_frame->getWidth() << ','
-            << buffer_frame->getHeight();
-        string msg = metadata.str() + ':' + buffer_frame->getXFlow() + ':' + buffer_frame->getYFlow();
-        
+        // serialize and send buffer_frame
+        stringstream msg;
+        boost::archive::text_oarchive serializer(msg);
+        serializer << *buffer_frame.get();
+        string serialized_msg = msg.str();
+
         // send flow data to socket
-        s_send(*flow_requester, msg);
+        s_send(*flow_requester, serialized_msg);
     }
 }
 

@@ -3,7 +3,7 @@ OBJS	:= flowVectorFrame.o flowVectorService.o slowMotionService.o videoProcessor
 
 CC 		:= g++
 CFLAGS 	:= -Wall -std=c++14 -Wno-nullability-completeness
-LDFLAGS	:= -L/usr/local/include -lzmq
+LDFLAGS	:= -L/usr/local/include -lzmq -lboost_serialization
 
 all: $(TARGET)
 
