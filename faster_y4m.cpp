@@ -8,14 +8,24 @@
 
 using namespace std;
 
-int main() {
+bool validY4M(const string& path) {
+    size_t i = path.rfind('.', path.length());
+    if(i != string::npos) {
+      string ending = path.substr(i+1, path.length() - i);
+      if(!ending.compare("y4m"))
+        return 1;
+    }
+    return 0;
+}
+
+int main(int argc, char* argv[]) {
     int wid = 0, hei = 0, frames = 0;
     bool wcheck = false, hcheck = false;
     char temp = 0;
     int i = 1;
 
     ifstream file;
-    file.open("akiyo_cif.y4m", ios::binary);
+    file.open(argv[1], ios::binary);
 
     char* tempBuffer = nullptr;
 
