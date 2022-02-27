@@ -24,6 +24,11 @@ int main(int argc, char* argv[]) {
     char temp = 0;
     int i = 1;
 
+    if(!validY4M(argv[1])) {
+        cout << "incorrect file format. please use y4m file extension" << endl;
+        return -1;
+    }
+
     ifstream file;
     file.open(argv[1], ios::binary);
 
