@@ -51,18 +51,27 @@ void SlowMotionService::startService() {
         string serialized_msg = s_recv(*flow_requester);
 
         // deserialize message into FlowVectorFrame
-        FlowVectorFrame buffer_frame;
+        FlowVectorFrame f;
         stringstream msg(serialized_msg);
         boost::archive::text_iarchive deserializer(msg);
-        deserializer >> buffer_frame;
+        deserializer >> f;
 
         // wrong object received
-        if (first_frame_index != buffer_frame.getFrameIndex()) {
+        if (first_frame_index != f.getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
 
-        // TODO: generate F_0_1, F_1_0, I0, and I1
+        // TODO: import torch
+        // create F_0_1 and F_1_0
+        // torch::Tensor xFlow_t = torch::from_blob(f.getXFlow(), {1, 1, f.getHeight(), f.getWidth()});
+        // torch::Tensor yFlow_t = torch::from_blob(f.getYFlow(), {1, 1, f.getHeight(), f.getWidth()});
+
+        // TODO:
+        // F_0_1 = torch.cat((xFlow, yFlow), dim = 1)
+        // F_1_0 = np.negative(F_0_1)
+
+        // TODO: get frames I0 and I1
 
         // TODO: generate intermediate frames
 
