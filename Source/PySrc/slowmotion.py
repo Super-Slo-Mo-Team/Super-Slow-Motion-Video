@@ -21,14 +21,14 @@ def generateSlowMotion(fvgEvent):
     parser.add_argument('--slowdown', type = int, required = True, help='slows down video by specified factor')
     parser.add_argument('--FPS', type = int, required = True, help='FPS of output video')
     args = parser.parse_args()
-    print(os.path.exists(dirPaths["FRAME"]))
-   
-    if not os.path.exists(dirPaths["FRAME"]):
-        os.makedirs(dirPaths["FRAME"])
+    
+    if os.path.exists(dirPaths["TMP"]):
+        print("Removing TmpDir...")
+        removeDir(Path(f'./{dirPaths["TMP"]}'))
+    
     if not os.path.exists(dirPaths["OUT"]):
         os.makedirs(dirPaths["OUT"])
-    if not os.path.exists(dirPaths["FLO"]):
-        os.makedirs(dirPaths["FLO"])
+    
 
     # TODO: create frame reader and generate frames on init
     frr = FrameReader(args.input, args.slowdown)
@@ -56,23 +56,26 @@ def generateSlowMotion(fvgEvent):
     lastFrameIndex = frr.getFrameCount() * args.slowdown
     # set event to start flow vector generation thread
     fvgEvent.set()
-    
+
     # process two frames at a time
     while firstFrameIndex < lastFrameIndex - args.slowdown:
         # wait for client request
+        
         msg = flowReceiver.recv().decode('utf-8')
         # retrieve message metadata
         msgSplit = msg.split(':')
+        
+        
         metadata = [int(x) for x in msgSplit[0].split(',')]
         vectorIndex, vectorWidth, vectorHeight = metadata[0], metadata[1], metadata[2]
         
         # send failure reply back to client
         if firstFrameIndex != vectorIndex * args.slowdown:
-            print ('PY: Received flow vectors out of order. Retrying.')
+            print ('SlowMotion.py: Received flow vectors out of order. Retrying.')
             flowReceiver.send_string(str(RESPONSE_FAILURE))
             continue
         else:
-            print (f'PY: Received flow vector for idx: {vectorIndex}')
+            print (f'SlowMotion.py: Received flow vector for idx: {vectorIndex}')
 
         # retrieve xFlow and yFlow
         xFlow = msgSplit[1].split(',')[1:]
@@ -132,6 +135,7 @@ def generateSlowMotion(fvgEvent):
     # reconstruct video at specified FPS
     path = Path(f'{dirPaths["TMP"]}/_')
     retval = os.system(f'ffmpeg -r {args.FPS} -i {path}%05d.png -vcodec ffvhuff {args.output}')
+
     #clean up temp directory
     path = Path(f'./{dirPaths["TMP"]}')
     removeDir(path)
@@ -143,8 +147,8 @@ def generateSlowMotion(fvgEvent):
 def generateFlowVectors(fvgEvent):
     if fvgEvent.wait(10):
         print("Starting flow vector generation...")
-        path = Path(f'{ROOT}/Source/CPPSrc/FlowVectors {dirPaths["FLO"]}')
-        os.system(path)
+        target = Path(f'{ROOT}/Source/PySrc/flowvectors.py') 
+        os.system(f'python {target} {dirPaths["FLO"]}')
     else:
         print("Frame generation timed out. Exiting")
         exit(1)

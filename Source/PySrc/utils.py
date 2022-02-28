@@ -10,9 +10,7 @@ import shutil
 
 ####Changed all dirPaths to new ones
 
-##TODO: SPLIT EXTRACT VIDEO FRAMES INTO:
-##      POPULATE(): if FrameDir/FloDir are empty we call this to run ffmpeg and NVIDIA Executable
-##      FORMAT() : can run this if FrameDir/FloDir are full and it formats all the frames to leave space for interpolation
+
 class FrameReader():
     def __init__(self, videoPath, slowdown):
         self.videoPath = videoPath
@@ -20,7 +18,7 @@ class FrameReader():
         self.frameCount = 0
         self.frameWidth = 0
         self.frameHeight = 0
-        if not exists(Path(f'{dirPaths["FRAME"]}/f_00001.png')):
+        if not os.path.exists(dirPaths["FRAME"]):
             self.populate()
         self.format()
 
@@ -28,18 +26,20 @@ class FrameReader():
 
     ##TODO need to integrate calling NVIDIA API here after ffmpeg call
     def populate(self):
+        os.makedirs(dirPaths["FRAME"])
         path = Path(f'{dirPaths["FRAME"]}/f_%05d.png')
-        retval = os.system(f'ffmpeg -i {self.videoPath} -vsync 0 {path}')#### added f to these frames
+        retval = os.system(f'ffmpeg -i {self.videoPath} -vsync 0 {path}')
         if retval:
             print ("Error converting video file.")
             return
         
-        ### DO FLO GENERATION HERE, output = {dirPaths['FLO']}
-        # extract frame count
-    
+        if not os.path.exists(dirPaths["FLO"]):
+            os.makedirs(dirPaths["FLO"])
+            ##TODO##
+            ##### generate flow frame and fill dirPaths["FLO"] with the output ####
     
     def format(self):
-        self.frameCount = len(fnmatch.filter(os.listdir(f'{dirPaths["FRAME"]}'), '*.png'))# does this need to be changed for windows?
+        self.frameCount = len(fnmatch.filter(os.listdir(f'{dirPaths["FRAME"]}'), '*.png'))
 
         # set frame width and height by opening first file
         path = Path(f'{dirPaths["FRAME"]}/{FIRST_RAW_FRAME_FILENAME}')
