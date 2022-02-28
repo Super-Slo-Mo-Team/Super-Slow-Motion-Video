@@ -51,13 +51,13 @@ void SlowMotionService::startService() {
         string serialized_msg = s_recv(*flow_requester);
 
         // deserialize message into FlowVectorFrame
-        FlowVectorFrame f;
+        unique_ptr<FlowVectorFrame> f = make_unique<FlowVectorFrame>();
         stringstream msg(serialized_msg);
         boost::archive::text_iarchive deserializer(msg);
-        deserializer >> f;
+        deserializer >> *f;
 
         // wrong object received
-        if (first_frame_index != f.getFrameIndex()) {
+        if (first_frame_index != f->getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
@@ -75,6 +75,7 @@ void SlowMotionService::startService() {
 
         // TODO: generate intermediate frames
 
+        f.reset();
         first_frame_index += slowmo_factor;
     }
 
