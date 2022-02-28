@@ -15,15 +15,15 @@ using namespace std;
 /**
  * @brief Construct a new VideoProcessor::VideoProcessor object
  *
- * @param input_path specifying path to input video file
- * @param slowmo_factor specifying how much the input video needs to be slowed down by
+ * @param inputPath specifying path to input video file
+ * @param slowmoFactor specifying how much the input video needs to be slowed down by
  */
-VideoProcessor::VideoProcessor(string input_path, int slowmo_factor) {
-    this->input_path = input_path;
-    this->slowmo_factor = slowmo_factor;
-    this->video_frame_count = 0;
-    this->video_width = 0;
-    this->video_height = 0;
+VideoProcessor::VideoProcessor(string inputPath, int slowmoFactor) {
+    this->inputPath = inputPath;
+    this->slowmoFactor = slowmoFactor;
+    this->videoFrameCount = 0;
+    this->videoWidth = 0;
+    this->videoHeight = 0;
 
     extractVideoFrames();
 }
@@ -35,37 +35,37 @@ VideoProcessor::VideoProcessor(string input_path, int slowmo_factor) {
 void VideoProcessor::extractVideoFrames() {
     // open input file
     ifstream file;
-    file.open(input_path, ios::binary);
+    file.open(inputPath, ios::binary);
 
     char ch = 0;
-    char *ch_buffer = nullptr;
-    bool found_w = false, found_h = false;
-    int frame_counter = 0;
+    char *chBuffer = nullptr;
+    bool foundW = false, foundH = false;
+    int frameCounter = 0;
 
     // read file one char at a time
     while (file.get(ch)) {
-        if ((ch) == 'W' && !found_w) {
+        if ((ch) == 'W' && !foundW) {
             string width = "";
             file.get(ch);
             while (isdigit(ch)) {
                 width += (ch);
                 file.get(ch);
             }
-            video_width = stoi(width);
-            cout << "Video width: " << video_width << endl;
-            found_w = true;
+            videoWidth = stoi(width);
+            cout << "Video width: " << videoWidth << endl;
+            foundW = true;
         }
 
-        if ((ch) == 'H' && !found_h) {
+        if ((ch) == 'H' && !foundH) {
             string height = "";
             file.get(ch);
             while (isdigit(ch)) {
                 height += (ch);
                 file.get(ch);
             }
-            video_height = stoi(height);
-            cout << "Video height: " << video_height << endl;
-            found_h = true;
+            videoHeight = stoi(height);
+            cout << "Video height: " << videoHeight << endl;
+            foundH = true;
         }
 
         if (ch == 'F') {
@@ -77,39 +77,39 @@ void VideoProcessor::extractVideoFrames() {
             }
             
             if (cur.compare("FRAME") == 0) {
-                video_frame_count++;
-                int size = video_width * video_height * 3 / 2;
+                videoFrameCount++;
+                int size = videoWidth * videoHeight * 3 / 2;
                 
-                if (ch_buffer == nullptr) {
-                    ch_buffer = (char*)malloc(size);
+                if (chBuffer == nullptr) {
+                    chBuffer = (char*)malloc(size);
                 }
                 
                 // read frame
-                file.read(ch_buffer, size);
+                file.read(chBuffer, size);
                 
                 // create output file path
-                stringstream path_builder;
-                path_builder << YUV_PATH << "/_" << setfill('0') << setw(5) << frame_counter << ".yuv";
-                string filename = path_builder.str();
+                stringstream pathBuilder;
+                pathBuilder << YUV_PATH << "/_" << setfill('0') << setw(5) << frameCounter << ".yuv";
+                string filename = pathBuilder.str();
 
                 // output file
                 ofstream output;
                 output.open(filename, ios::binary);
                 ostream_iterator<unsigned char> it(output);
-                output.write(ch_buffer, size);
+                output.write(chBuffer, size);
                 output.close();
                 
                 // increment frame counter
-                frame_counter += slowmo_factor;
+                frameCounter += slowmoFactor;
             }
         }
     }
 
     file.close();
-    cout << "Frames contained in video: " << video_frame_count << endl;
+    cout << "Frames contained in video: " << videoFrameCount << endl;
 
-    if (ch_buffer != nullptr) {
-        free(ch_buffer);
+    if (chBuffer != nullptr) {
+        free(chBuffer);
     }
 }
 
@@ -117,30 +117,30 @@ void VideoProcessor::extractVideoFrames() {
  * @brief Get the total number of frames in the video
  */
 int VideoProcessor::getVideoFrameCount() {
-    return video_frame_count;
+    return videoFrameCount;
 }
 
 /**
  * @brief Get the video width
  */
 int VideoProcessor::getVideoWidth() {
-    return video_width;
+    return videoWidth;
 }
 
 /**
  * @brief Get the video height
  */
 int VideoProcessor::getVideoHeight() {
-    return video_height;
+    return videoHeight;
 }
 
 // TODO
 /**
  * @brief Get a pair of images transformed to tensors
  * 
- * @param first_frame_index denoting the pair's first frame index
+ * @param firstFrameIndex denoting the pair's first frame index
  */
-int getFramePair(int first_index, int second_index) {
+int getFramePair(int firstFrameIndex, int secondIndex) {
 //     // I0, I1 = None, None
 
 //     // with open(dirPaths["iFrames"] + '/_%05d.png' % firstFrameIndex, 'rb') as file:

@@ -27,12 +27,12 @@ FlowVectorService* FlowVectorService::GetInstance() {
  */
 FlowVectorService::FlowVectorService() {
     // create context
-    this->context = make_unique<zmq::context_t>(1);
+    context = make_unique<zmq::context_t>(1);
 
     // initialize requester socket on localhost:8080
-    this->flow_requester = make_unique<zmq::socket_t>(*context, ZMQ_REP);
+    flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REP);
     cout << "FVS: Binding responder to tcp://127.0.0.1:5555..." << endl;
-	flow_requester->bind("tcp://127.0.0.1:5555");
+	flowRequester->bind("tcp://127.0.0.1:5555");
 }
 
 /**
@@ -41,53 +41,53 @@ FlowVectorService::FlowVectorService() {
 void FlowVectorService::startService() {
     while (1) {
         // listen to incoming requests
-        int frame_index = stoi(s_recv(*flow_requester));
+        int frameIndex = stoi(s_recv(*flowRequester));
 
         // output received request
-        if (frame_index == -1) {
+        if (frameIndex == -1) {
             cout << "FVS: Received request to break " << endl;
             break;
         } else {
-            cout << "FVS: Received request to read frame " << frame_index << endl;
+            cout << "FVS: Received request to read frame " << frameIndex << endl;
         }
         
         // generate flow frame to be sent over IPC
-        createFlowVectorFrame(frame_index, buffer_frame);
+        createFlowVectorFrame(frameIndex, bufferFrame);
         
         // serialize and send buffer_frame
         stringstream msg;
         boost::archive::text_oarchive serializer(msg);
-        serializer << *buffer_frame.get();
-        string serialized_msg = msg.str();
+        serializer << *bufferFrame.get();
+        string serializedMsg = msg.str();
 
         // send flow data to socket
-        s_send(*flow_requester, serialized_msg);
+        s_send(*flowRequester, serializedMsg);
     }
 }
 
 /**
  * @brief Construct a frame object to be sent through IPC
  *   
- * @param frame_index denoting which flow frame to retrieve
- * @param buffer_frame containing reference to flowFrame object where information will be loaded
+ * @param frameIndex denoting which flow frame to retrieve
+ * @param bufferFrame containing reference to flowFrame object where information will be loaded
  */
-void FlowVectorService::createFlowVectorFrame(int frame_index, unique_ptr<FlowVectorFrame> &buffer_frame) {
+void FlowVectorService::createFlowVectorFrame(int frameIndex, unique_ptr<FlowVectorFrame> &bufferFrame) {
     // build file path using frame_index
-    stringstream path_builder;
-    path_builder << FLO_PATH << "/_" << setfill('0') << setw(5) << frame_index << ".flo";
-    string filename = path_builder.str();
+    stringstream pathBuilder;
+    pathBuilder << FLO_PATH << "/_" << setfill('0') << setw(5) << frameIndex << ".flo";
+    string filename = pathBuilder.str();
 
     // open file
     ifstream file = ifstream(filename, ifstream::binary);
 
     // error
     if (!file) {
-        cout << "FVS: No flo file with index " << frame_index << " in directory: " << FLO_PATH << ". Exiting." << endl;
+        cout << "FVS: No flo file with index " << frameIndex << " in directory: " << FLO_PATH << ". Exiting." << endl;
         exit(EXIT_FAILURE);
     }
 
     // create FlowFrame from file
-    buffer_frame = make_unique<FlowVectorFrame>(file, frame_index);
+    bufferFrame = make_unique<FlowVectorFrame>(file, frameIndex);
 
     // close file
     file.close();

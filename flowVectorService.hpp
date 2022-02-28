@@ -13,9 +13,9 @@ class FlowVectorService {
     private:
         static FlowVectorService* flowVectorService_;
         unique_ptr<zmq::context_t> context;
-        unique_ptr<zmq::socket_t> flow_requester;
-        unique_ptr<FlowVectorFrame> buffer_frame;
-        void createFlowVectorFrame(int frame_index, unique_ptr<FlowVectorFrame> &buffer_frame);
+        unique_ptr<zmq::socket_t> flowRequester;
+        unique_ptr<FlowVectorFrame> bufferFrame;
+        void createFlowVectorFrame(int frameIndex, unique_ptr<FlowVectorFrame> &bufferFrame);
         FlowVectorService();
     public:
         FlowVectorService(FlowVectorService &other) = delete;

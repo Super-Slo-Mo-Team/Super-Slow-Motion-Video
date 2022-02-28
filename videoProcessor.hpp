@@ -7,19 +7,19 @@ using namespace std;
 
 class VideoProcessor {
     private:
-        string input_path;
-        int slowmo_factor;
-        int video_frame_count;
-        int video_width;
-        int video_height;
+        string inputPath;
+        int slowmoFactor;
+        int videoFrameCount;
+        int videoWidth;
+        int videoHeight;
         void extractVideoFrames();
     public:
-        VideoProcessor(string input_path, int slowmo_factor);
+        VideoProcessor(string inputPath, int slowmoFactor);
         int getVideoFrameCount();
         int getVideoWidth();
         int getVideoHeight();
         // TODO
-        int getFramePair(int first_index, int second_index);
+        int getFramePair(int firstIndex, int secondIndex);
 };
 
 #endif

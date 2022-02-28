@@ -12,14 +12,14 @@ using namespace std;
 class FlowVectorFrame {
     private:
         friend class boost::serialization::access;
-        int frame_index;
+        int frameIndex;
         int width;
         int height;
         float* xFlow;
         float* yFlow;
         template<class Archive>
         void serialize(Archive &ar, const unsigned int version) {
-            ar & frame_index;
+            ar & frameIndex;
             ar & width;
             ar & height;
             if (Archive::is_loading::value) {
@@ -33,7 +33,7 @@ class FlowVectorFrame {
         }
     public:
         FlowVectorFrame() {};
-        FlowVectorFrame(istream& file, int frame_index);
+        FlowVectorFrame(istream& file, int frameIndex);
         int getFrameIndex();
         int getWidth();
         int getHeight();

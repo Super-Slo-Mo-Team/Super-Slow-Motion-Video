@@ -12,9 +12,9 @@ SlowMotionService *SlowMotionService::slowMotionService_ = nullptr;
 /**
  * @brief Create a singleton instance of FlowVectorService::FlowVectorService class
  */
-SlowMotionService* SlowMotionService::GetInstance(string input_path, int slowmo_factor, int output_fps, string output_path) {
+SlowMotionService* SlowMotionService::GetInstance(string inputPath, int slowmoFactor, int outputFps, string outputPath) {
     if (slowMotionService_ == nullptr) {
-        slowMotionService_ = new SlowMotionService(input_path, slowmo_factor, output_fps, output_path);
+        slowMotionService_ = new SlowMotionService(inputPath, slowmoFactor, outputFps, outputPath);
     }
 
     return slowMotionService_;
@@ -24,28 +24,28 @@ SlowMotionService* SlowMotionService::GetInstance(string input_path, int slowmo_
  * @brief Create a SlowMotionService::SlowMotionService object to handle all operations required for
  * interpolated frame generation
  *
- * @param input_path specifying path to input video file
- * @param slowmo_factor specifying how much the input video needs to be slowed down by
- * @param output_fps specifying fps of output video
- * @param output_path specifying path to output video file
+ * @param inputPath specifying path to input video file
+ * @param slowmoFactor specifying how much the input video needs to be slowed down by
+ * @param outputFps specifying fps of output video
+ * @param outputPath specifying path to output video file
  */
-SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int output_fps, string output_path) {
+SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int outputFps, string outputPath) {
     // create context
-    this->context = make_unique<zmq::context_t>(1);
+    context = make_unique<zmq::context_t>(1);
 
     // initialize requester socket on localhost:8080
-    this->flow_requester = make_unique<zmq::socket_t>(*context, ZMQ_REQ);
+    flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REQ);
     cout << "SMS: Connecting requester to tcp://127.0.0.1:5555..." << endl;
-	flow_requester->connect("tcp://127.0.0.1:5555");
+	flowRequester->connect("tcp://127.0.0.1:5555");
 
     // initialize variables
-    this->input_path = input_path;
-    this->slowmo_factor = slowmo_factor;
-    this->output_fps = output_fps;
-    this->output_path = output_path;
+    this->inputPath = inputPath;
+    this->slowmoFactor = slowmoFactor;
+    this->outputFps = outputFps;
+    this->outputPath = outputPath;
 
     // create frame reader to interface directly with video frames
-    this->video_processor = make_unique<VideoProcessor>(input_path, slowmo_factor);
+    videoProcessor = make_unique<VideoProcessor>(inputPath, slowmoFactor);
 
     // TODO: create models
 }
@@ -54,24 +54,24 @@ SlowMotionService::SlowMotionService(string input_path, int slowmo_factor, int o
  * @brief Process video frames in pairs and created interpolated frames
  */
 void SlowMotionService::startService() {
-    int first_frame_index = 0;
-    int last_frame_index = video_processor->getVideoFrameCount() * slowmo_factor;
+    int firstFrameIndex = 0;
+    int lastFrameIndex = videoProcessor->getVideoFrameCount() * slowmoFactor;
 
-    while (first_frame_index < last_frame_index) {
+    while (firstFrameIndex < lastFrameIndex) {
         // send request with frame number
-        s_send(*flow_requester, to_string(first_frame_index));
+        s_send(*flowRequester, to_string(firstFrameIndex));
         
         // receive message
-        string serialized_msg = s_recv(*flow_requester);
+        string serializedMsg = s_recv(*flowRequester);
 
         // deserialize message into FlowVectorFrame
         unique_ptr<FlowVectorFrame> f = make_unique<FlowVectorFrame>();
-        stringstream msg(serialized_msg);
+        stringstream msg(serializedMsg);
         boost::archive::text_iarchive deserializer(msg);
         deserializer >> *f;
 
         // wrong object received
-        if (first_frame_index != f->getFrameIndex()) {
+        if (firstFrameIndex != f->getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
@@ -90,11 +90,11 @@ void SlowMotionService::startService() {
         // TODO: generate intermediate frames
 
         f.reset();
-        first_frame_index += slowmo_factor;
+        firstFrameIndex += slowmoFactor;
     }
 
     // send termination request
-    s_send(*flow_requester, to_string(-1));
+    s_send(*flowRequester, to_string(-1));
 
     // TODO: reconstruct video
 

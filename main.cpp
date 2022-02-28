@@ -13,22 +13,22 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    string input_path = argv[1];
-    int slowmo_factor = stoi(argv[2]);
-    int output_fps = stoi(argv[3]);
-    string output_path = argv[4];
+    string inputPath = argv[1];
+    int slowmoFactor = stoi(argv[2]);
+    int outputFps = stoi(argv[3]);
+    string outputPath = argv[4];
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
-    SlowMotionService *sms = SlowMotionService::GetInstance(input_path, slowmo_factor, output_fps, output_path);
+    SlowMotionService *sms = SlowMotionService::GetInstance(inputPath, slowmoFactor, outputFps, outputPath);
 
     // create threads with appropriate entry points
-    thread flow_service_thread(&FlowVectorService::startService, &*fvs);
-    thread slowmo_service_thread(&SlowMotionService::startService, &*sms);
+    thread flowServiceThread(&FlowVectorService::startService, &*fvs);
+    thread slowmoServiceThread(&SlowMotionService::startService, &*sms);
     
     // terminate program upon completion
-    slowmo_service_thread.join();
-    flow_service_thread.join();
+    slowmoServiceThread.join();
+    flowServiceThread.join();
 
     return EXIT_SUCCESS;
 }
