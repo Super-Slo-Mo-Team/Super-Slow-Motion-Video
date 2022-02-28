@@ -19,12 +19,12 @@ int main(int argc, char* argv[]) {
     string output_path = argv[4];
 
     // initialize services
-    FlowVectorService fvs = FlowVectorService();
-    SlowMotionService sms = SlowMotionService(input_path, slowmo_factor, output_fps, output_path);
+    FlowVectorService *fvs = FlowVectorService::GetInstance();
+    SlowMotionService *sms = SlowMotionService::GetInstance(input_path, slowmo_factor, output_fps, output_path);
 
     // create threads with appropriate entry points
-    thread flow_service_thread(&FlowVectorService::startService, &fvs);
-    thread slowmo_service_thread(&SlowMotionService::startService, &sms);
+    thread flow_service_thread(&FlowVectorService::startService, &*fvs);
+    thread slowmo_service_thread(&SlowMotionService::startService, &*sms);
     
     // terminate program upon completion
     slowmo_service_thread.join();

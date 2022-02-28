@@ -6,6 +6,20 @@
 
 using namespace std;
 
+// singleton class instance
+SlowMotionService *SlowMotionService::slowMotionService_ = nullptr;
+
+/**
+ * @brief Create a singleton instance of FlowVectorService::FlowVectorService class
+ */
+SlowMotionService* SlowMotionService::GetInstance(string input_path, int slowmo_factor, int output_fps, string output_path) {
+    if (slowMotionService_ == nullptr) {
+        slowMotionService_ = new SlowMotionService(input_path, slowmo_factor, output_fps, output_path);
+    }
+
+    return slowMotionService_;
+}
+
 /**
  * @brief Create a SlowMotionService::SlowMotionService object to handle all operations required for
  * interpolated frame generation

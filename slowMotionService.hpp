@@ -11,6 +11,7 @@ using namespace std;
 
 class SlowMotionService {
     private:
+        static SlowMotionService* slowMotionService_;
         string input_path;
         int slowmo_factor;
         int output_fps;
@@ -19,8 +20,11 @@ class SlowMotionService {
         unique_ptr<zmq::socket_t> flow_requester;
         unique_ptr<FlowVectorFrame> buffer_frame;
         unique_ptr<VideoProcessor> video_processor;
-    public:
         SlowMotionService(string input_path, int slowmo_factor, int output_fps, string output_path);
+    public:
+        SlowMotionService(SlowMotionService &other) = delete;
+        void operator=(const SlowMotionService&) = delete;
+        static SlowMotionService* GetInstance(string input_path, int slowmo_factor, int output_fps, string output_path);
         void startService();
 };
 

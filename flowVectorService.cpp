@@ -7,6 +7,20 @@
 
 using namespace std;
 
+// singleton class instance
+FlowVectorService *FlowVectorService::flowVectorService_ = nullptr;
+
+/**
+ * @brief Create a singleton instance of FlowVectorService::FlowVectorService class
+ */
+FlowVectorService* FlowVectorService::GetInstance() {
+    if (flowVectorService_ == nullptr) {
+        flowVectorService_ = new FlowVectorService();
+    }
+
+    return flowVectorService_;
+}
+
 /**
  * @brief Create a FlowVectorService::FlowVectorService object to handle returning
  * FlowVectorFrame objects parsed from flow files over TCP
