@@ -67,7 +67,7 @@ void SlowMotionService::startService() {
         // deserialize message into FlowVectorFrame
         unique_ptr<FlowVectorFrame> f = make_unique<FlowVectorFrame>();
         stringstream msg(serializedMsg);
-        boost::archive::text_iarchive deserializer(msg);
+        boost::archive::binary_iarchive deserializer(msg);
         deserializer >> *f;
 
         // wrong object received

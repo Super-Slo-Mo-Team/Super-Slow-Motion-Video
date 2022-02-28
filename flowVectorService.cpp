@@ -56,7 +56,7 @@ void FlowVectorService::startService() {
         
         // serialize and send buffer_frame
         stringstream msg;
-        boost::archive::text_oarchive serializer(msg);
+        boost::archive::binary_oarchive serializer(msg);
         serializer << *bufferFrame.get();
         string serializedMsg = msg.str();
 

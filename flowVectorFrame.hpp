@@ -4,8 +4,8 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/array.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
 using namespace std;
 
