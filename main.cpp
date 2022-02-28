@@ -13,10 +13,28 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // check input arguments
     string inputPath = argv[1];
-    int slowmoFactor = stoi(argv[2]);
-    int outputFps = stoi(argv[3]);
-    string outputPath = argv[4];
+    string outputPath = argv[2];
+    int slowmoFactor, outputFps;
+
+    try {
+        slowmoFactor = stoi(argv[3]);
+        outputFps = stoi(argv[4]);
+    } catch (...) {
+        cout << "Slowmo factor and/or output FPS are not integer numbers. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (slowmoFactor <= 1) {
+        cout << "Invalid slowmo factor. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (outputFps <= 0) {
+        cout << "Invalid slowmo factor. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
