@@ -58,6 +58,11 @@ void SlowMotionService::startService() {
     int lastFrameIndex = videoProcessor->getVideoFrameCount() * slowmoFactor;
 
     while (firstFrameIndex < lastFrameIndex) {
+        // TODO: remove after all .flo files are imported
+        if (firstFrameIndex == 900) {
+            break;
+        }
+
         // send request with frame number
         s_send(*flowRequester, to_string(firstFrameIndex));
         
