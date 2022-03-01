@@ -36,6 +36,8 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // TODO: make all temp directories
+
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
     SlowMotionService *sms = SlowMotionService::GetInstance(inputPath, slowmoFactor, outputFps, outputPath);
@@ -47,6 +49,8 @@ int main(int argc, char* argv[]) {
     // terminate program upon completion
     slowmoServiceThread.join();
     flowServiceThread.join();
+
+    // TODO: remove all temp directories
 
     return EXIT_SUCCESS;
 }

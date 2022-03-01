@@ -15,4 +15,3 @@ build/*
 *.y4m
 *.mkv
 *.ckpt
-tmp/*
