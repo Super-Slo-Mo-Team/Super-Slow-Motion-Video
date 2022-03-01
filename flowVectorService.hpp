@@ -12,10 +12,10 @@ using namespace std;
 class FlowVectorService {
     private:
         static FlowVectorService* flowVectorService_;
-        unique_ptr<zmq::context_t> context;
-        unique_ptr<zmq::socket_t> flowRequester;
-        unique_ptr<FlowVectorFrame> bufferFrame;
-        void createFlowVectorFrame(int frameIndex, unique_ptr<FlowVectorFrame> &bufferFrame);
+        zmq::context_t context;
+        zmq::socket_t flowRequester;
+        FlowVectorFrame bufferFrame;
+        void createFlowVectorFrame(int frameIndex);
         FlowVectorService();
     public:
         FlowVectorService(FlowVectorService &other) = delete;

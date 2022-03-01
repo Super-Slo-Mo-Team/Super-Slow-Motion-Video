@@ -3,12 +3,21 @@
 using namespace std;
 
 /**
- * @brief Construct a new FlowVectorFrame::FlowVectorFrame object from a .flo file
+ * @brief Allocate float pointers for the FlowVectorFrame::FlowVectorFrame object
+ */
+void FlowVectorFrame::setup(int numVecs) {
+    this->numVecs = numVecs;
+    xFlow = new float[numVecs];
+    yFlow = new float[numVecs];
+}
+
+/**
+ * @brief Load a frame's info into FlowVectorFrame::FlowVectorFrame object
  *
  * @param file containing unparsed flow vector information
  * @param frameIndex denoting the frame
  */
-FlowVectorFrame::FlowVectorFrame(istream& file, int frameIndex) {
+void FlowVectorFrame::readFloFile(istream& file, int frameIndex) {
     this->frameIndex = frameIndex;
     float dummy;
 
@@ -16,10 +25,12 @@ FlowVectorFrame::FlowVectorFrame(istream& file, int frameIndex) {
     file.read(reinterpret_cast<char*>(&width), sizeof(int));
     file.read(reinterpret_cast<char*>(&height), sizeof(int));
 
-    int numVecs = width * height;
-    xFlow = new float[numVecs];
-    yFlow = new float[numVecs];
+    // one time xFlow and yFlow allocation upon processing first frame
+    if (!frameIndex) {
+        setup(width * height);
+    }
 
+    // read xFlow and yFlow from file
     for (int i = 0; i != numVecs; i++) {
         float x, y;
         file.read(reinterpret_cast<char*>(&x), sizeof(float));

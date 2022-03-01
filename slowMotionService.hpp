@@ -16,10 +16,10 @@ class SlowMotionService {
         int slowmoFactor;
         int outputFps;
         string outputPath;
-        unique_ptr<zmq::context_t> context;
-        unique_ptr<zmq::socket_t> flowRequester;
-        unique_ptr<FlowVectorFrame> bufferFrame;
-        unique_ptr<VideoProcessor> videoProcessor;
+        zmq::context_t context;
+        zmq::socket_t flowRequester;
+        VideoProcessor videoProcessor;
+        FlowVectorFrame bufferFrame;
         SlowMotionService(string inputPath, int slowmoFactor, int outputFps, string outputPath);
     public:
         SlowMotionService(SlowMotionService &other) = delete;

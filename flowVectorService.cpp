@@ -27,12 +27,12 @@ FlowVectorService* FlowVectorService::GetInstance() {
  */
 FlowVectorService::FlowVectorService() {
     // create context
-    context = make_unique<zmq::context_t>(1);
+    context = zmq::context_t(1);
 
     // initialize requester socket on localhost:8080
-    flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REP);
-    cout << "FVS: Binding responder to tcp://127.0.0.1:5555..." << endl;
-	flowRequester->bind("ipc://tmp/flowVec.sock");
+    flowRequester = zmq::socket_t(context, ZMQ_REP);
+    cout << "FVS: Binding responder to " << FV_SOCKET_PATH << "..." << endl;
+	flowRequester.bind(FV_SOCKET_PATH);
 }
 
 /**
@@ -41,7 +41,7 @@ FlowVectorService::FlowVectorService() {
 void FlowVectorService::startService() {
     while (1) {
         // listen to incoming requests
-        int frameIndex = stoi(s_recv(*flowRequester));
+        int frameIndex = stoi(s_recv(flowRequester));
 
         // output received request
         if (frameIndex == -1) {
@@ -52,16 +52,16 @@ void FlowVectorService::startService() {
         }
         
         // generate flow frame to be sent over IPC
-        createFlowVectorFrame(frameIndex, bufferFrame);
+        createFlowVectorFrame(frameIndex);
         
         // serialize and send buffer_frame
         stringstream msg;
         boost::archive::binary_oarchive serializer(msg);
-        serializer << *bufferFrame.get();
+        serializer << bufferFrame;
         string serializedMsg = msg.str();
 
         // send flow data to socket
-        s_send(*flowRequester, serializedMsg);
+        s_send(flowRequester, serializedMsg);
     }
 }
 
@@ -69,9 +69,8 @@ void FlowVectorService::startService() {
  * @brief Construct a frame object to be sent through IPC
  *   
  * @param frameIndex denoting which flow frame to retrieve
- * @param bufferFrame containing reference to flowFrame object where information will be loaded
  */
-void FlowVectorService::createFlowVectorFrame(int frameIndex, unique_ptr<FlowVectorFrame> &bufferFrame) {
+void FlowVectorService::createFlowVectorFrame(int frameIndex) {
     // build file path using frame_index
     stringstream pathBuilder;
     pathBuilder << FLO_PATH << "/_" << setfill('0') << setw(5) << frameIndex << ".flo";
@@ -87,7 +86,7 @@ void FlowVectorService::createFlowVectorFrame(int frameIndex, unique_ptr<FlowVec
     }
 
     // create FlowFrame from file
-    bufferFrame = make_unique<FlowVectorFrame>(file, frameIndex);
+    bufferFrame.readFloFile(file, frameIndex);
 
     // close file
     file.close();

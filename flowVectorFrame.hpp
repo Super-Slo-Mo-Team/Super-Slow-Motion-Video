@@ -13,10 +13,12 @@ class FlowVectorFrame {
     private:
         friend class boost::serialization::access;
         int frameIndex;
+        int numVecs;
         int width;
         int height;
         float* xFlow;
         float* yFlow;
+        void setup(int numVecs);
         template<class Archive>
         void serialize(Archive &ar, const unsigned int version) {
             ar & frameIndex;
@@ -37,7 +39,7 @@ class FlowVectorFrame {
             free(xFlow);
             free(yFlow);
         };
-        FlowVectorFrame(istream& file, int frameIndex);
+        void readFloFile(istream& file, int frameIndex);
         int getFrameIndex();
         int getWidth();
         int getHeight();

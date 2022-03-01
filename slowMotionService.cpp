@@ -1,5 +1,6 @@
 #include "slowMotionService.hpp"
 #include "videoProcessor.hpp"
+#include "config.hpp"
 
 #include <zhelpers.hpp>
 #include <iostream>
@@ -31,12 +32,12 @@ SlowMotionService* SlowMotionService::GetInstance(string inputPath, int slowmoFa
  */
 SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int outputFps, string outputPath) {
     // create context
-    context = make_unique<zmq::context_t>(1);
+    context = zmq::context_t(1);
 
     // initialize requester socket on localhost:8080
-    flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REQ);
-    cout << "SMS: Connecting requester to tcp://127.0.0.1:5555..." << endl;
-	flowRequester->connect("ipc://tmp/flowVec.sock");
+    flowRequester = zmq::socket_t(context, ZMQ_REQ);
+    cout << "SMS: Connecting responder to " << FV_SOCKET_PATH << "..." << endl;
+	flowRequester.connect(FV_SOCKET_PATH);
 
     // initialize variables
     this->inputPath = inputPath;
@@ -45,7 +46,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     this->outputPath = outputPath;
 
     // create frame reader to interface directly with video frames
-    videoProcessor = make_unique<VideoProcessor>(inputPath, slowmoFactor);
+    videoProcessor = VideoProcessor(inputPath, slowmoFactor);
 
     // TODO: create models
 }
@@ -55,7 +56,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
  */
 void SlowMotionService::startService() {
     int firstFrameIndex = 0;
-    int lastFrameIndex = videoProcessor->getVideoFrameCount() * slowmoFactor;
+    int lastFrameIndex = videoProcessor.getVideoFrameCount() * slowmoFactor;
 
     while (firstFrameIndex < lastFrameIndex) {
         // TODO: remove after all .flo files are imported
@@ -64,26 +65,25 @@ void SlowMotionService::startService() {
         }
 
         // send request with frame number
-        s_send(*flowRequester, to_string(firstFrameIndex));
+        s_send(flowRequester, to_string(firstFrameIndex));
         
         // receive message
-        string serializedMsg = s_recv(*flowRequester);
+        string serializedMsg = s_recv(flowRequester);
 
         // deserialize message into FlowVectorFrame
-        unique_ptr<FlowVectorFrame> f = make_unique<FlowVectorFrame>();
         stringstream msg(serializedMsg);
         boost::archive::binary_iarchive deserializer(msg);
-        deserializer >> *f;
+        deserializer >> bufferFrame;
 
         // wrong object received
-        if (firstFrameIndex != f->getFrameIndex()) {
+        if (firstFrameIndex != bufferFrame.getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
 
         // create F_0_1 and F_1_0
-        // torch::Tensor xFlow_t = torch::from_blob(f.getXFlow(), {1, 1, f->getHeight(), f->getWidth()});
-        // torch::Tensor yFlow_t = torch::from_blob(f.getYFlow(), {1, 1, f->getHeight(), f->getWidth()});
+        // torch::Tensor xFlow_t = torch::from_blob(bufferFrame.getXFlow(), {1, 1, bufferFrame->getHeight(), bufferFrame->getWidth()});
+        // torch::Tensor yFlow_t = torch::from_blob(bufferFrame.getYFlow(), {1, 1, bufferFrame->getHeight(), bufferFrame->getWidth()});
 
         // TODO:
         // F_0_1 = torch.cat((xFlow, yFlow), dim = 1)
@@ -97,7 +97,7 @@ void SlowMotionService::startService() {
     }
 
     // send termination request
-    s_send(*flowRequester, to_string(-1));
+    s_send(flowRequester, to_string(-1));
 
     // TODO: reconstruct video
 

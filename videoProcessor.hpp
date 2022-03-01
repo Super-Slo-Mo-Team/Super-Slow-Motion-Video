@@ -14,6 +14,7 @@ class VideoProcessor {
         int videoHeight;
         void extractVideoFrames();
     public:
+        VideoProcessor() {};
         VideoProcessor(string inputPath, int slowmoFactor);
         int getVideoFrameCount();
         int getVideoWidth();
