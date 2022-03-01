@@ -1,10 +1,8 @@
 # ignore C++ compilation executables
-FlowVectors
-FlowVectors.dSYM/
-slowmotion.dSYM
+build/*
 
-# ignore python cache
-__pycache__/
+# ignore debug bundles
+*.dSYM
 
 # ignore Mac files
 .DS_Store
