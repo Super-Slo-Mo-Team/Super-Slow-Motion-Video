@@ -1,6 +1,7 @@
 # ignore C++ compilation executables
 FlowVectors
 FlowVectors.dSYM/
+slowmotion.dSYM
 
 # ignore python cache
 __pycache__/
