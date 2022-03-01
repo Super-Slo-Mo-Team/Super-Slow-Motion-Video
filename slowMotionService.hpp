@@ -18,7 +18,7 @@ class SlowMotionService {
         string outputPath;
         zmq::context_t context;
         zmq::socket_t flowRequester;
-        VideoProcessor videoProcessor;
+        VideoProcessor* videoProcessor;
         FlowVectorFrame bufferFrame;
         SlowMotionService(string inputPath, int slowmoFactor, int outputFps, string outputPath);
     public:

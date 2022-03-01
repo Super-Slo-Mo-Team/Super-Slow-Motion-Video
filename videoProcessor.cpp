@@ -12,6 +12,20 @@
 
 using namespace std;
 
+// singleton class instance
+VideoProcessor *VideoProcessor::videoProcessor_ = nullptr;
+
+/**
+ * @brief Create a singleton instance of FlowVectorService::FlowVectorService class
+ */
+VideoProcessor* VideoProcessor::GetInstance(string inputPath, int slowmoFactor) {
+    if (videoProcessor_ == nullptr) {
+        videoProcessor_ = new VideoProcessor(inputPath, slowmoFactor);
+    }
+
+    return videoProcessor_;
+}
+
 /**
  * @brief Construct a new VideoProcessor::VideoProcessor object
  *

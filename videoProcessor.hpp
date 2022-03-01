@@ -7,6 +7,7 @@ using namespace std;
 
 class VideoProcessor {
     private:
+        static VideoProcessor* videoProcessor_;
         string inputPath;
         int slowmoFactor;
         int videoFrameCount;
@@ -14,8 +15,10 @@ class VideoProcessor {
         int videoHeight;
         void extractVideoFrames();
     public:
-        VideoProcessor() {};
         VideoProcessor(string inputPath, int slowmoFactor);
+        VideoProcessor(VideoProcessor &other) = delete;
+        void operator=(const VideoProcessor&) = delete;
+        static VideoProcessor* GetInstance(string inputPath, int slowmoFactor);
         int getVideoFrameCount();
         int getVideoWidth();
         int getVideoHeight();

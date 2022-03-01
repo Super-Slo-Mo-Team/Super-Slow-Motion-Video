@@ -46,7 +46,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     this->outputPath = outputPath;
 
     // create frame reader to interface directly with video frames
-    videoProcessor = VideoProcessor(inputPath, slowmoFactor);
+    videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
 
     // TODO: create models
 }
@@ -56,7 +56,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
  */
 void SlowMotionService::startService() {
     int firstFrameIndex = 0;
-    int lastFrameIndex = videoProcessor.getVideoFrameCount() * slowmoFactor;
+    int lastFrameIndex = videoProcessor->getVideoFrameCount() * slowmoFactor;
 
     while (firstFrameIndex < lastFrameIndex) {
         // TODO: remove after all .flo files are imported
