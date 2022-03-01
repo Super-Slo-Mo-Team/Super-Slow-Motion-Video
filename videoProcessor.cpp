@@ -103,7 +103,7 @@ void VideoProcessor::extractVideoFrames() {
                 
                 // create output file path
                 stringstream pathBuilder;
-                pathBuilder << YUV_PATH << "/_" << setfill('0') << setw(5) << frameCounter << ".yuv";
+                pathBuilder << YUV_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameCounter << ".yuv";
                 string filename = pathBuilder.str();
 
                 // output file

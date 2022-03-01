@@ -44,7 +44,7 @@ void FlowVectorService::startService() {
         int frameIndex = stoi(s_recv(flowRequester));
 
         // output received request
-        if (frameIndex == -1) {
+        if (frameIndex == TERMINATION_MSG) {
             cout << "FVS: Received request to break " << endl;
             break;
         } else {
@@ -73,7 +73,7 @@ void FlowVectorService::startService() {
 void FlowVectorService::createFlowVectorFrame(int frameIndex) {
     // build file path using frame_index
     stringstream pathBuilder;
-    pathBuilder << FLO_PATH << "/_" << setfill('0') << setw(5) << frameIndex << ".flo";
+    pathBuilder << FLO_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".flo";
     string filename = pathBuilder.str();
 
     // open file

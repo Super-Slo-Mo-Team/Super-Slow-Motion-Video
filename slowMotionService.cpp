@@ -97,7 +97,7 @@ void SlowMotionService::startService() {
     }
 
     // send termination request
-    s_send(flowRequester, to_string(-1));
+    s_send(flowRequester, to_string(TERMINATION_MSG));
 
     // TODO: reconstruct video
 
