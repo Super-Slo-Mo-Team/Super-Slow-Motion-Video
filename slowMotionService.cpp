@@ -36,7 +36,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     // initialize requester socket on localhost:8080
     flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REQ);
     cout << "SMS: Connecting requester to tcp://127.0.0.1:5555..." << endl;
-	flowRequester->connect("tcp://127.0.0.1:5555");
+	flowRequester->connect("ipc://tmp/flowVec.sock");
 
     // initialize variables
     this->inputPath = inputPath;
@@ -76,10 +76,9 @@ void SlowMotionService::startService() {
             continue;
         }
 
-        // TODO: import torch
         // create F_0_1 and F_1_0
-        // torch::Tensor xFlow_t = torch::from_blob(f.getXFlow(), {1, 1, f.getHeight(), f.getWidth()});
-        // torch::Tensor yFlow_t = torch::from_blob(f.getYFlow(), {1, 1, f.getHeight(), f.getWidth()});
+        // torch::Tensor xFlow_t = torch::from_blob(f.getXFlow(), {1, 1, f->getHeight(), f->getWidth()});
+        // torch::Tensor yFlow_t = torch::from_blob(f.getYFlow(), {1, 1, f->getHeight(), f->getWidth()});
 
         // TODO:
         // F_0_1 = torch.cat((xFlow, yFlow), dim = 1)
@@ -89,7 +88,6 @@ void SlowMotionService::startService() {
 
         // TODO: generate intermediate frames
 
-        f.reset();
         firstFrameIndex += slowmoFactor;
     }
 

@@ -30,9 +30,13 @@ class FlowVectorFrame {
                 yFlow = new float[width * height];
             }
             ar & boost::serialization::make_array<float>(yFlow, width * height);
-        }
+        };
     public:
         FlowVectorFrame() {};
+        ~FlowVectorFrame() {
+            free(xFlow);
+            free(yFlow);
+        };
         FlowVectorFrame(istream& file, int frameIndex);
         int getFrameIndex();
         int getWidth();

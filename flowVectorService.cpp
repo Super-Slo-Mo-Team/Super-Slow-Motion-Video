@@ -32,7 +32,7 @@ FlowVectorService::FlowVectorService() {
     // initialize requester socket on localhost:8080
     flowRequester = make_unique<zmq::socket_t>(*context, ZMQ_REP);
     cout << "FVS: Binding responder to tcp://127.0.0.1:5555..." << endl;
-	flowRequester->bind("tcp://127.0.0.1:5555");
+	flowRequester->bind("ipc://tmp/flowVec.sock");
 }
 
 /**
