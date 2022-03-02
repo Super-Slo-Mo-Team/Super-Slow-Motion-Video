@@ -122,6 +122,10 @@ void VideoProcessor::extractVideoFrames() {
     file.close();
     cout << "Frames contained in video: " << videoFrameCount << endl;
 
+    if (!videoFrameCount) {
+        cout << "Check valid file input." << endl;
+    }
+
     if (chBuffer != nullptr) {
         free(chBuffer);
     }
