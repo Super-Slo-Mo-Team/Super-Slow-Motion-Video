@@ -37,7 +37,9 @@ class FrameReader():
             os.makedirs(dirPaths["FLO"])
             ##TODO##
             ##### generate flow frame and fill dirPaths["FLO"] with the output ####
-    
+            print("Starting flow vector generation...")
+            os.system(f'./AppOFCuda --input={dirPaths["FRAME"]}.*png --output={dirPaths["FLO"]}/')
+
     def format(self):
         self.frameCount = len(fnmatch.filter(os.listdir(f'{dirPaths["FRAME"]}'), '*.png'))
 
