@@ -137,8 +137,15 @@ BEGIN
         MENUITEM "IWMPlayer2",                  ID_WMPPLAYER2, INACTIVE
         MENUITEM "    stretchToFit",            ID_WMPPLAYER2_STRETCHTOFIT
     END
+    POPUP "Select Speed"
+    BEGIN
+        MENUITEM "4x Slower Speed",                      ID_4xOption
+        MENUITEM "8x Slower Speed",                      ID_8xOption
+        MENUITEM "16x Slower Speed",                     ID_16xOption
+    END
     MENUITEM     "&Select Folder"              ID_WMPCORE_SELECTFOLDER
     MENUITEM     "Test Shell"                  ID_TESTSHELL
+
 END
 
 

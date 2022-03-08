@@ -1,2 +1,3 @@
 ﻿  CWMPHost.cpp
+  The contents of <filesystem> are available only with C++17 or later.
   wmphost.vcxproj -> C:\Users\User\source\repos\WindowsSDK7-Samples-master\multimedia\WMP\cpp\WMPHost\x64\Debug\wmphost.exe

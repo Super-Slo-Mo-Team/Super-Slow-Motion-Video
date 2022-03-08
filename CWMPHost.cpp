@@ -2,11 +2,25 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //
-
 #include "stdafx.h"
 #include "CWMPHost.h"
 #include "dialogs.h"
+#include <iostream>
+#include <stdlib.h>
+#include <string>
+#include <vector>
+#include <stdlib.h>
 
+#include "atlbase.h"
+#include "atlstr.h"
+#include "comutil.h"
+#include <filesystem>
+
+
+BSTR selected_folder_macro;
+BSTR SELECTED_VIDEO_MACRO;
+BSTR SELECTED_VIDEOFILENAME_MACRO;
+BSTR SELECTED_SLOWDOWN_MACRO;
 /////////////////////////////////////////////////////////////////////////////
 // CWMPHost
 
@@ -124,6 +138,45 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
         hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+        auto path = SysAllocString(dlgOpen.m_bstrName);
+        SELECTED_VIDEO_MACRO = path;
+        SELECTED_VIDEOFILENAME_MACRO = extract_filename(path);
+
+        CString source = SELECTED_VIDEO_MACRO;
+        CString restOfFolder = L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1";
+        CString solution = MY_SOLUTIONDIR;
+        CString target = solution + restOfFolder;
+
+        OutputDebugString(target);
+        SHFILEOPSTRUCT SH = { 0 };
+
+        SH.hwnd = NULL;
+        SH.wFunc = FO_COPY;
+
+        SH.fFlags = NULL;
+        SH.fFlags |= FOF_SILENT;
+        SH.fFlags |= FOF_NOCONFIRMMKDIR;
+        SH.fFlags |= FOF_NOCONFIRMATION;
+        SH.fFlags |= FOF_WANTMAPPINGHANDLE;
+        SH.fFlags |= FOF_NOERRORUI;
+        
+        std::vector<TCHAR> sourceBuffer;
+        std::vector<TCHAR> targetBuffer;
+
+        sourceBuffer.resize(source.GetLength() + 1);
+        memcpy(&(sourceBuffer[0]), source.operator LPCTSTR(),
+            sizeof(TCHAR) * (source.GetLength() + 1));  // (1)
+        sourceBuffer.push_back('\0');
+
+        targetBuffer.resize(target.GetLength() + 1);
+        memcpy(&(targetBuffer[0]), target.operator LPCTSTR(),
+            sizeof(TCHAR) * (target.GetLength() + 1));  // (1)
+        targetBuffer.push_back('\0');
+
+        SH.pFrom = &(sourceBuffer[0]);
+        SH.pTo = &(targetBuffer[0]);
+        ::SHFileOperation(&SH);
+      
         if (FAILMSG(hr))
             return 0;
     }
@@ -564,13 +617,15 @@ LRESULT CWMPHost::FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */)
 {
     CFolderPickerDialog dlgOpen;
-    HRESULT      hr;
+    //HRESULT      hr;
 
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
-        hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+        /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         if (FAILMSG(hr))
-            return 0;
+            return 0;*/
+        selected_folder_macro = dlgOpen.m_bstrName;
+        //OutputDebugString(dlgOpen.m_bstrName);
     }
     return 0;
 }
@@ -578,7 +633,65 @@ LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hW
     //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir  \"C:\\TestFolder\""), NULL, SW_SHOWNORMAL);
     //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("\"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
     //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
-     ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat\""), NULL, SW_SHOW);
+    // this one works ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat\""), NULL, SW_SHOW);
+    //BSTR test = _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat");
+    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat\""), NULL, SW_SHOW);
+    //BSTR cmd = L"/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat testDir\"";
 
-     return 0;
+    auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
+    auto b = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
+    auto c = SysAllocString(L" ");
+    auto d = SysAllocString(SELECTED_SLOWDOWN_MACRO);
+
+    auto first_result = Concat(a, b);
+    auto second_result = Concat(first_result, c);
+    auto final_result = Concat(second_result, d);
+
+    //OutputDebugString(final_result);
+    ShellExecute(NULL, _T("open"), _T("cmd.exe"),final_result, NULL, SW_SHOW);
+
+    SysFreeString(a);
+    SysFreeString(b);
+    SysFreeString(c);
+    return 0;
+}
+LRESULT CWMPHost::fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    SELECTED_SLOWDOWN_MACRO = L"4";
+    return 0;
+}
+LRESULT CWMPHost::eightxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    SELECTED_SLOWDOWN_MACRO = L"8";
+    return 0;
+}
+LRESULT CWMPHost::sixteenxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    SELECTED_SLOWDOWN_MACRO = L"16";
+    return 0;
+}
+BSTR CWMPHost::Concat(BSTR a, BSTR b)
+{
+    auto lengthA = SysStringLen(a);
+    auto lengthB = SysStringLen(b);
+
+    auto result = SysAllocStringLen(NULL, lengthA + lengthB);
+
+    memcpy(result, a, lengthA * sizeof(OLECHAR));
+    memcpy(result + lengthA, b, lengthB * sizeof(OLECHAR));
+
+    result[lengthA + lengthB] = 0;
+    return result;
+}
+BSTR CWMPHost::extract_filename(BSTR path)
+{
+    std::wstring wstr(path);
+    size_t finalBackSlash = 0;
+    size_t len = wstr.length();
+    for (size_t i = 0; i < len; i++) {
+        if (wstr[i] == L'\\') {
+            finalBackSlash = i;
+        }
+    }
+    std::wstring retString = wstr.substr(finalBackSlash + 1);
+    BSTR bstr = SysAllocString(retString.c_str());
+
+    return bstr;
 }

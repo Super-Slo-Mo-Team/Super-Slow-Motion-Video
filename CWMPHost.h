@@ -54,6 +54,10 @@ public:
         COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLECONTEXTMENU, OnWMPPlayerEnableContextMenu)        
         COMMAND_ID_HANDLER(ID_WMPPLAYER_UIMODE, OnWMPPlayerUIMode)        
         COMMAND_ID_HANDLER(ID_WMPPLAYER2_STRETCHTOFIT, OnWMPPlayer2StretchToFit)        
+        COMMAND_ID_HANDLER(ID_4xOption, fourxOption)
+        COMMAND_ID_HANDLER(ID_8xOption, eightxOption)
+        COMMAND_ID_HANDLER(ID_16xOption, sixteenxOption)
+
     END_MSG_MAP()
 
     void OnFinalMessage(HWND /*hWnd*/);
@@ -85,6 +89,12 @@ public:
     LRESULT OnWMPPlayer2StretchToFit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+
+    LRESULT CWMPHost::fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT CWMPHost::eightxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT CWMPHost::sixteenxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    BSTR Concat(BSTR a, BSTR b);
+    BSTR extract_filename(BSTR path);
 
     CAxWindow                   m_wndView;
     CComPtr<IWMPPlayer>         m_spWMPPlayer;
