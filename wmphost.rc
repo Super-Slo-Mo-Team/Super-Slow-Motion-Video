@@ -139,9 +139,9 @@ BEGIN
     END
     POPUP "Select Speed"
     BEGIN
+        MENUITEM "2x Slower Speed",                      ID_2xOption
+        MENUITEM "3x Slower Speed",                      ID_3xOption
         MENUITEM "4x Slower Speed",                      ID_4xOption
-        MENUITEM "8x Slower Speed",                      ID_8xOption
-        MENUITEM "16x Slower Speed",                     ID_16xOption
     END
     MENUITEM     "&Select Folder"              ID_WMPCORE_SELECTFOLDER
     MENUITEM     "Test Shell"                  ID_TESTSHELL

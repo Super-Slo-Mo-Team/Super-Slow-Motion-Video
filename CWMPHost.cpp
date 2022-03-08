@@ -630,41 +630,44 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
     return 0;
 }
 LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
-    //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir  \"C:\\TestFolder\""), NULL, SW_SHOWNORMAL);
-    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("\"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
-    //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
-    // this one works ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat\""), NULL, SW_SHOW);
-    //BSTR test = _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat");
-    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat\""), NULL, SW_SHOW);
-    //BSTR cmd = L"/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat testDir\"";
+    
+    CString solutionCString = MY_SOLUTIONDIR;
+    auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
 
-    auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-    auto b = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
-    auto c = SysAllocString(L" ");
-    auto d = SysAllocString(SELECTED_SLOWDOWN_MACRO);
+    auto solutionBSTR = solutionCString.AllocSysString();
+    auto cmd = Concat(solutionBSTR, restOfFile);
+    auto videoArg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
+    auto space = SysAllocString(L" ");
+    auto slowdownArg = SysAllocString(SELECTED_SLOWDOWN_MACRO);
+    auto kString = SysAllocString(L"/k ");
 
-    auto first_result = Concat(a, b);
-    auto second_result = Concat(first_result, c);
-    auto final_result = Concat(second_result, d);
+    auto prep = Concat(kString, cmd);
+    auto first_result = Concat(prep, videoArg);
+    auto second_result = Concat(first_result, space);
+    auto final_result = Concat(second_result, slowdownArg);;
 
     //OutputDebugString(final_result);
-    ShellExecute(NULL, _T("open"), _T("cmd.exe"),final_result, NULL, SW_SHOW);
+    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
 
-    SysFreeString(a);
-    SysFreeString(b);
-    SysFreeString(c);
+
+    SysFreeString(cmd);
+    SysFreeString(solutionBSTR);
+    SysFreeString(videoArg);
+    SysFreeString(space);
+    SysFreeString(slowdownArg);
+    SysFreeString(kString);
+    return 0;
+}
+LRESULT CWMPHost::twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    SELECTED_SLOWDOWN_MACRO = L"2";
+    return 0;
+}
+LRESULT CWMPHost::threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    SELECTED_SLOWDOWN_MACRO = L"3";
     return 0;
 }
 LRESULT CWMPHost::fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     SELECTED_SLOWDOWN_MACRO = L"4";
-    return 0;
-}
-LRESULT CWMPHost::eightxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
-    SELECTED_SLOWDOWN_MACRO = L"8";
-    return 0;
-}
-LRESULT CWMPHost::sixteenxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
-    SELECTED_SLOWDOWN_MACRO = L"16";
     return 0;
 }
 BSTR CWMPHost::Concat(BSTR a, BSTR b)

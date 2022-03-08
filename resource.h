@@ -47,9 +47,9 @@
 #define ID_WMPPLAYER2                   32905
 #define ID_WMPPLAYER2_STRETCHTOFIT      32906
 #define ID_TESTSHELL					209
-#define ID_4xOption						210
-#define ID_8xOption						211
-#define ID_16xOption					212
+#define ID_2xOption						210
+#define ID_3xOption						211
+#define ID_4xOption						212
 
 // Next default values for new objects
 // 
