@@ -1,7 +1,7 @@
 @echo off
 cd Super-Slow-Motion-Video-LN-ProjectStructure\UserDir\ExampleProj1 
 echo Beginning Slow Motion Generation...
-SET target=%~dp0..\..\Source\PySrc\slowmotion.py --input %1 --output Outputs\Output.mkv --FPS 25 --slowdown %2 
+SET target=%~dp0..\..\Source\PySrc\slowmotion.py --input %1 --output Outputs\Output_%2X.mkv --FPS 25 --slowdown %2 
 SET environment=%~dp0..\..\PythonEnvironment\Scripts
 %environment%\activate.bat && python %target% && deactivate
 echo Output Video Generated
