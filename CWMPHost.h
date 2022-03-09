@@ -57,6 +57,7 @@ public:
         COMMAND_ID_HANDLER(ID_2xOption, twoxOption)
         COMMAND_ID_HANDLER(ID_3xOption, threexOption)
         COMMAND_ID_HANDLER(ID_4xOption, fourxOption)
+        COMMAND_ID_HANDLER(ID_PLAYSLOMO, PlaySlomo)
 
     END_MSG_MAP()
 
@@ -90,9 +91,11 @@ public:
     LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
 
-    LRESULT CWMPHost::twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    LRESULT CWMPHost::threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    LRESULT CWMPHost::fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+
     BSTR Concat(BSTR a, BSTR b);
     BSTR extract_filename(BSTR path);
 
