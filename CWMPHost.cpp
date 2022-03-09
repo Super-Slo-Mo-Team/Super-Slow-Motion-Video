@@ -176,7 +176,8 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
         SH.pFrom = &(sourceBuffer[0]);
         SH.pTo = &(targetBuffer[0]);
         ::SHFileOperation(&SH);
-      
+        hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+
         if (FAILMSG(hr))
             return 0;
     }
@@ -630,8 +631,19 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
     return 0;
 }
 LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
-    
+    //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir  \"C:\\TestFolder\""), NULL, SW_SHOWNORMAL);
+    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("\"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
+    //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
+    // this one works ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat\""), NULL, SW_SHOW);
+    //BSTR test = _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat");
+    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat\""), NULL, SW_SHOW);
+    //BSTR cmd = L"/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat testDir\"";
     CString solutionCString = MY_SOLUTIONDIR;
+    auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat");
+ 
+    auto solutionBSTR = solutionCString.AllocSysString();
+    auto cmd = Concat(solutionBSTR, restOfFile);
+    //auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
     //auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
 
     //auto solutionBSTR = solutionCString.AllocSysString();
@@ -645,10 +657,11 @@ LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hW
     auto prep = SysAllocString(L"/k C:\\Users\\\"Sean H\"\\Documents\\ecs193\\Super-Slow-Motion-Video\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
     auto first_result = Concat(prep, videoArg);
     auto second_result = Concat(first_result, space);
-    auto final_result = Concat(second_result, slowdownArg);;
-
+    auto final_result = Concat(second_result, slowdownArg);
     OutputDebugString(final_result);
-    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
+
+    //OutputDebugString(final_result);
+    ShellExecute(NULL, _T("open"), _T("cmd.exe"),final_result, NULL, SW_SHOW);
 
 
     //SysFreeString(cmd);
@@ -669,6 +682,37 @@ LRESULT CWMPHost::threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* h
 }
 LRESULT CWMPHost::fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     SELECTED_SLOWDOWN_MACRO = L"4";
+    return 0;
+}
+
+LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+    
+    CString solutionCString = MY_SOLUTIONDIR;
+    HRESULT      hr;
+
+    auto solution_dir_to_video_folder = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\Outputs\\");
+    auto solutionBSTR = solutionCString.AllocSysString();
+    auto full_video_folder_path = Concat(solutionBSTR, solution_dir_to_video_folder);
+    auto slowdown = SysAllocString(SELECTED_SLOWDOWN_MACRO);
+    auto video_arg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
+    auto underscore = SysAllocString(L"_");
+    auto x_letter = SysAllocString(L"X");
+    auto penultimate_concat =  Concat(underscore, slowdown);
+    auto final_concat_insertion = Concat(penultimate_concat, x_letter);
+
+    std::wstring wstr(video_arg);
+    size_t video_type_idx = wstr.rfind(SysAllocString(L"."));
+    wstr.insert(video_type_idx, final_concat_insertion);
+    BSTR video_name = SysAllocString(wstr.c_str());
+    
+
+    auto final_concatination = Concat(full_video_folder_path, video_name);
+    OutputDebugString(final_concatination);
+    
+    hr = m_spWMPPlayer->put_URL(final_concatination);
+
+    if (FAILMSG(hr))
+        return 0;
     return 0;
 }
 BSTR CWMPHost::Concat(BSTR a, BSTR b)
