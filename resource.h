@@ -50,6 +50,7 @@
 #define ID_2xOption						210
 #define ID_3xOption						211
 #define ID_4xOption						212
+#define ID_PLAYSLOMO					213
 
 // Next default values for new objects
 // 
