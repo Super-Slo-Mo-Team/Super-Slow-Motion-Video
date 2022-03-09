@@ -6,6 +6,7 @@ from PIL import Image
 from torchvision import transforms
 from config import *
 import shutil
+import subprocess
 
 
 ####Changed all dirPaths to new ones
@@ -37,6 +38,8 @@ class FrameReader():
             os.makedirs(dirPaths["FLO"])
             ##TODO##
             ##### generate flow frame and fill dirPaths["FLO"] with the output ####
+            print("Starting flow vector generation...")
+            subprocess.run(['..\\..\\Source\\AppOFCuda\\AppOFCuda.exe',f'--input={dirPaths["FRAME"]}\\*.png',f'--output={dirPaths["FLO"]}\\'])
     
     def format(self):
         self.frameCount = len(fnmatch.filter(os.listdir(f'{dirPaths["FRAME"]}'), '*.png'))
