@@ -632,30 +632,31 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
 LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     
     CString solutionCString = MY_SOLUTIONDIR;
-    auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
+    //auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
 
-    auto solutionBSTR = solutionCString.AllocSysString();
-    auto cmd = Concat(solutionBSTR, restOfFile);
+    //auto solutionBSTR = solutionCString.AllocSysString();
+    //auto cmd = Concat(solutionBSTR, restOfFile);
     auto videoArg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
     auto space = SysAllocString(L" ");
     auto slowdownArg = SysAllocString(SELECTED_SLOWDOWN_MACRO);
-    auto kString = SysAllocString(L"/k ");
+    //auto kString = SysAllocString(L"/k ");
 
-    auto prep = Concat(kString, cmd);
+    //auto prep = Concat(kString, cmd);
+    auto prep = SysAllocString(L"/k C:\\Users\\\"Sean H\"\\Documents\\ecs193\\Super-Slow-Motion-Video\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
     auto first_result = Concat(prep, videoArg);
     auto second_result = Concat(first_result, space);
     auto final_result = Concat(second_result, slowdownArg);;
 
-    //OutputDebugString(final_result);
+    OutputDebugString(final_result);
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
 
 
-    SysFreeString(cmd);
-    SysFreeString(solutionBSTR);
+    //SysFreeString(cmd);
+    //SysFreeString(solutionBSTR);
     SysFreeString(videoArg);
     SysFreeString(space);
     SysFreeString(slowdownArg);
-    SysFreeString(kString);
+    //SysFreeString(kString);
     return 0;
 }
 LRESULT CWMPHost::twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
