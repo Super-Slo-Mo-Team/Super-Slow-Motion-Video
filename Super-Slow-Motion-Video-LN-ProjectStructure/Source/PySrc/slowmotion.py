@@ -134,7 +134,7 @@ def generateSlowMotion(fvgEvent):
 
     # reconstruct video at specified FPS
     path = Path(f'{dirPaths["TMP"]}/_')
-    retval = os.system(f'ffmpeg -r {args.FPS} -i {path}%05d.png -vcodec ffvhuff {args.output}')
+    retval = os.system(f'ffmpeg -r {args.FPS} -i {path}%05d.png -pix_fmt yuv420p {args.output}')
 
     #clean up temp directory
     path = Path(f'./{dirPaths["TMP"]}')
