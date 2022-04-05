@@ -27,7 +27,7 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 ## set source files
-add_executable(Super_Slow_Motion_Video main.cpp flowVectorFrame.cpp flowVectorService.cpp
+add_executable(Super_Slow_Motion_Video main.cpp model.cpp flowVectorFrame.cpp flowVectorService.cpp
     slowMotionService.cpp videoProcessor.cpp)
 
 ## add include directories to compile and link directives

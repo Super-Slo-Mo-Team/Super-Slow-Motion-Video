@@ -1,9 +1,9 @@
 #include "slowMotionService.hpp"
 #include "videoProcessor.hpp"
+#include "model.cpp"
 #include "config.hpp"
 
 #include <zhelpers.hpp>
-#include <torch/torch.h>
 
 #include <iostream>
 
