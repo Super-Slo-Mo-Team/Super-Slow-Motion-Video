@@ -3,6 +3,7 @@
 // TODO: AvgPool2dFuncOptions is a little suspicious with the kernel size parameter
 // TODO: check bilinear upscaling factor code
 // TODO: check whether grids work correctly in BackWarp
+// TODO: check backwarp model math and yuvFrame parameter
 
 /**
  * @brief Struct to create Encoder Hierarchy Layers
@@ -118,6 +119,9 @@ struct UNet : torch::nn::Module {
     DecoderHierarchy dh1, dh2, dh3, dh4, dh5;
 };
 
+/**
+ * @brief Struct to create a Backward Warping function g()
+ */
 struct BackWarp : torch::nn::Module {
     BackWarp(int width, int height) {
         this->width = width;
@@ -129,23 +133,27 @@ struct BackWarp : torch::nn::Module {
         yGrid = grids[1];
     }
 
-    // take yuvFrame as an argument as well
-    torch::Tensor forward(torch::Tensor F_t) {
+    torch::Tensor forward(torch::Tensor F_t, torch::Tensor yuvFrame) {
         namespace F = torch::nn::functional;
-        // add xGrid to xFlow (need to unsqueeze to add outer dim)
-        // add yGrid to yFlow (need to unsqueeze to add outer dim)
-            // also might need to call expand as to be safe
-        torch::Tensor xGridFlow;
-        torch::Tensor yGridFlow;
-
-        // TODO: convert this python to C++
-        // xGridFlow = 2 * (x / width - 0.5)
-        // yGridFlow = 2 * (y / height - 0.5)
-
+        // get xFlow and yFlow tensors
+        torch::Tensor xFlow = F_t.slice(1, 0, 1);
+        torch::Tensor yFlow = F_t.slice(1, 1, 2);
+        // calculate xGridFlow and yGridFlow
+        torch::Tensor xGridFlow = xGrid.unsqueeze(0).expand_as(xFlow);
+        xGridFlow = torch::add(xGridFlow, xFlow);
+        torch::Tensor yGridFlow = yGrid.unsqueeze(0).expand_as(yFlow);
+        yGridFlow = torch::add(yGridFlow, yFlow);
+        // normalize
+        xGridFlow = torch::div(xGridFlow, width);
+        xGridFlow = torch::sub(xGridFlow, 0.5);
+        xGridFlow = torch::mul(xGridFlow, 2);
+        yGridFlow = torch::div(yGridFlow, height);
+        yGridFlow = torch::sub(xGridFlow, 0.5);
+        yGridFlow = torch::mul(yGridFlow, 2);
+        // stack
         torch::Tensor yuvFrameGrid = torch::stack({xGridFlow, yGridFlow}, 3);
-        
-        // TODO: finish with yuv frame
-        // return F::grid_sample(yuvFrame, yuvFrameGrid);
+
+        return F::grid_sample(yuvFrame, yuvFrameGrid);
     }
 
     int width, height;
