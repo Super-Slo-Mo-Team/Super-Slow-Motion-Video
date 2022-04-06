@@ -2,6 +2,7 @@
 
 // TODO: AvgPool2dFuncOptions is a little suspicious with the kernel size parameter
 // TODO: check bilinear upscaling factor code
+// TODO: check whether grids work correctly in BackWarp
 
 /**
  * @brief Struct to create Encoder Hierarchy Layers
@@ -117,9 +118,6 @@ struct UNet : torch::nn::Module {
     DecoderHierarchy dh1, dh2, dh3, dh4, dh5;
 };
 
-// TODO: read more of the paper for the backwarp model
-
-// TODO: check whether grids works correctly
 struct BackWarp : torch::nn::Module {
     BackWarp(int width, int height) {
         this->width = width;
@@ -127,15 +125,31 @@ struct BackWarp : torch::nn::Module {
         torch::Tensor x = torch::arange(0, this->width);
         torch::Tensor y = torch::arange(0, this->height);
         std::vector<torch::Tensor> grids = torch::meshgrid({x, y});
-        gridX = grids[0];
-        gridY = grids[1];
+        xGrid = grids[0];
+        yGrid = grids[1];
     }
 
-    // take img, flow as args
-    torch::Tensor forward() {
+    // take yuvFrame as an argument as well
+    torch::Tensor forward(torch::Tensor F_t) {
+        namespace F = torch::nn::functional;
+        // add xGrid to xFlow (need to unsqueeze to add outer dim)
+        // add yGrid to yFlow (need to unsqueeze to add outer dim)
+            // also might need to call expand as to be safe
+        torch::Tensor xGridFlow;
+        torch::Tensor yGridFlow;
+
+        // TODO: convert this python to C++
+        // xGridFlow = 2 * (x / width - 0.5)
+        // yGridFlow = 2 * (y / height - 0.5)
+
+        torch::Tensor yuvFrameGrid = torch::stack({xGridFlow, yGridFlow}, 3);
         
+        // TODO: finish with yuv frame
+        // return F::grid_sample(yuvFrame, yuvFrameGrid);
     }
 
     int width, height;
-    torch::Tensor gridX, gridY;
+    torch::Tensor xGrid, yGrid;
 };
+
+// TODO: training code
