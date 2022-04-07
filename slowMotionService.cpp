@@ -84,9 +84,10 @@ void SlowMotionService::startService() {
         }
 
         // create F_0_1 and F_1_0
-        torch::Tensor xFlow_t = torch::from_blob(bufferFrame.getXFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()});
-        torch::Tensor yFlow_t = torch::from_blob(bufferFrame.getYFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()});
-        torch::Tensor F_0_1 = torch::cat({xFlow_t, yFlow_t}, 1);
+        torch::Tensor F_0_1 = torch::cat({
+                torch::from_blob(bufferFrame.getXFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()}),
+                torch::from_blob(bufferFrame.getYFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
+            }, 1);
         torch::Tensor F_1_0 = torch::neg(F_0_1);
 
         // TODO: get frames I0 and I1
