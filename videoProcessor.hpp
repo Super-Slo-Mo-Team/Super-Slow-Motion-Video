@@ -2,7 +2,7 @@
 #define VIDEO_PROCECSSOR_HPP
 
 #include <string>
-
+#include <torch/torch.h>
 using namespace std;
 
 class VideoProcessor {
@@ -22,8 +22,12 @@ class VideoProcessor {
         int getVideoFrameCount();
         int getVideoWidth();
         int getVideoHeight();
-        // TODO
-        int getFramePair(int firstIndex, int secondIndex);
+        
+        vector<torch::Tensor> getFramePair(int frameIndex);
+        static vector<int> ReadAllBytes(string filename);
+        torch::Tensor fileToTensor(string file);
+        void mapColor(std::vector<int> values,torch::Tensor* colorT);
+        void yTensor(std::vector<int> values, torch::Tensor* yT);
 };
 
 #endif
