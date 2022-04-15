@@ -215,7 +215,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     mapColor(vValues, &V);
     V.unsqueeze_(0);
 
-    if (Y.sizes() != U.sizes() && U.sizes() != V.sizes()){
+    if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()){
         cout << "YUV file formatted incorrectly, individual tensor sizes are not equal..." << endl;
         cout << "Y Tensor is of size: " << Y.sizes() << endl;
         cout << "U Tensor is of size: " << U.sizes() << endl;
