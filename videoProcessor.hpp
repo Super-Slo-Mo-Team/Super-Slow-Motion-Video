@@ -28,6 +28,9 @@ class VideoProcessor {
         torch::Tensor fileToTensor(string file);
         void mapColor(std::vector<int> values,torch::Tensor* colorT);
         void yTensor(std::vector<int> values, torch::Tensor* yT);
+
+        vector<char> tensorToYUV(torch::Tensor img);
+        vector<int> resizeColorVector(torch::Tensor color);
 };
 
 #endif

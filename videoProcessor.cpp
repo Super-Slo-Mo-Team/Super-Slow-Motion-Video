@@ -181,6 +181,8 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
 
     return framePair;
 }
+
+
 /**
  * @brief facilitates the creation of a tensor from a YUV file
  * 
@@ -214,6 +216,10 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
 
     mapColor(vValues, &V);
     V.unsqueeze_(0);
+
+
+    
+
 
     if (Y.sizes() != U.sizes() && U.sizes() != V.sizes()){
         cout << "YUV file formatted incorrectly, individual tensor sizes are not equal..." << endl;
@@ -256,11 +262,12 @@ vector<int> VideoProcessor::ReadAllBytes(string filename)
     }
    
     vector<char> result(memblock, memblock+size);
+ 
     vector<int> intResult;
     for(int i = 0; i < size; i++){
         intResult.push_back(int(result[i]));
     }
-   
+
     return intResult;
 }
 
@@ -298,3 +305,55 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
     *colorT = torch::cat({*colorT, colorTensor},0);
 }
 
+/**
+ * @brief takes the tensor, converts it back to a YUV file in the form of a vector<char>
+ * 
+ * !! Can write this vector to a file by passing &vector[0] as the data
+ * 
+ * @param img 
+ */
+vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
+    img.squeeze_();
+
+    auto Y = img[0];
+    auto U = img[1];
+    auto V = img[2];
+    Y = Y.contiguous();
+    std::vector<int> vectorY(Y.data_ptr<int>(), Y.data_ptr<int>() + Y.numel());
+    
+    std::vector<int> vectorU = this->resizeColorVector(U);
+    std::vector<int> vectorV = this->resizeColorVector(V);
+    
+    vectorY.insert(vectorY.end(), vectorU.begin(), vectorU.end());
+    vectorY.insert(vectorY.end(), vectorV.begin(), vectorV.end());
+
+
+    //This could be optimized no? feel like theres a better way but havnt found it quite yet
+    vector<char> yuvFile;
+    for(int i = 0; i < vectorY.size(); i++){
+        yuvFile.push_back( char(vectorY[i]) );
+    }
+    
+    return yuvFile;
+}
+
+/**
+ * @brief shrinks color tensor into a vector 1/4 the size
+ * 
+ * @param color 
+ */
+vector<int>VideoProcessor::resizeColorVector(torch::Tensor color){
+    vector<int> resizedVector;
+    
+    auto access = color.accessor<int,2>();
+    for (int i = 0; i < videoHeight; i += 2){
+        for(int j = 0; j < videoWidth; j += 2 ){
+            resizedVector.push_back(access[i][j]);
+        }
+    }
+    return resizedVector;
+    
+}
+
+    
+}
