@@ -200,6 +200,8 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     vector<int>::const_iterator endOfU = endOfY + frameSize/4;
     vector<int>::const_iterator endOfV = endOfU + frameSize/4;
 
+
+    
     vector<int> yValues(start,endOfY);
     vector<int> uValues(endOfY,endOfU);
     vector<int> vValues(endOfU,endOfV);
@@ -216,6 +218,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
 
     mapColor(vValues, &V);
     V.unsqueeze_(0);
+    
 
     if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()){
         cout << "YUV file formatted incorrectly, individual tensor sizes are not equal..." << endl;
@@ -226,13 +229,15 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     }
 
     torch::Tensor img = torch::empty(0,torch::kInt);
-
+    
     img = torch::cat({img,Y,U,V},0);
 
     return img.unsqueeze(0);
 
 
 }
+
+
 /**
  * @brief reads the YUV file into a vector of int values
  *
@@ -299,6 +304,8 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
         }
     }
     *colorT = torch::cat({*colorT, colorTensor},0);
+    torch::Tensor unsignedTensorTransform = torch::full({this->videoHeight, this->videoWidth}, 128, torch::kInt);
+    *colorT = torch::add(*colorT, unsignedTensorTransform);
 }
 
 /**
@@ -338,7 +345,9 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
  *
  * @param color
  */
-vector<int>VideoProcessor::resizeColorVector(torch::Tensor color){
+vector<int> VideoProcessor::resizeColorVector(torch::Tensor color){
+    torch::Tensor unsignedTensorTransform = torch::full({this->videoHeight, this->videoWidth}, 128, torch::kInt);
+    color = torch::sub(color,unsignedTensorTransform);
     vector<int> resizedVector;
 
     auto access = color.accessor<int,2>();
@@ -352,4 +361,3 @@ vector<int>VideoProcessor::resizeColorVector(torch::Tensor color){
 }
 
 
-}
