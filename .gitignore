@@ -1,3 +1,6 @@
+# ignore python cache
+__pycache__/
+
 # ignore C++ compilation executables
 build/*
 
@@ -15,3 +18,9 @@ build/*
 *.y4m
 *.mkv
 *.ckpt
+
+# ignore data
+data.nosync/*
+
+# ignore old work
+model.old.py
