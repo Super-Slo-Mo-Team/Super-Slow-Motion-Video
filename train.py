@@ -16,21 +16,19 @@ class DataSet(torch.utils.data.Dataset):
         for i, folder in enumerate(os.listdir(root)):
             clipsFolderPath = os.path.join(root, folder)
 
-            if not (os.path.isdir(clipsFolderPath)):
-                continue
-
-            framesPath.append([])
-            for image in sorted(os.listdir(clipsFolderPath)):
-                framesPath[i].append(os.path.join(clipsFolderPath, image))
+            if os.path.isdir(clipsFolderPath):
+                framesPath.append([])
+                for image in sorted(os.listdir(clipsFolderPath)):
+                    framesPath[i].append(os.path.join(clipsFolderPath, image))
         
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"))
+            raise(RuntimeError("Found 0 files in clip folders of: " + root + "\n"))
                 
+        self.root = root
+        self.transform = transform
         self.randomCropSize = randomCropSize
         self.cropX0 = dim[0] - randomCropSize[0]
         self.cropY0 = dim[1] - randomCropSize[1]
-        self.root = root
-        self.transform = transform
         self.train = train
         self.framesPath = framesPath
 

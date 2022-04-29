@@ -24,7 +24,9 @@ def generateClips(videos, indices, outputPath):
                 # TODO: generate forward and backward flow vectors
 
             clipCounter += 1
-        
+
+# TODO: convert to .yuv
+
 def main():
     # get list of dataset videos
     videos = [video for video in os.listdir(VIDEO_DATASET_PATH) if 
