@@ -50,7 +50,22 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     // create frame reader to interface directly with video frames
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
 
+    // TODO: initialize device correctly
+    torch::DeviceType device_type;
+    // device_type = torch::kCuda;
+    torch::Device device(device_type);
+
     // TODO: create models
+    UNet interpolationModel = UNet();
+    interpolationModel.to(device);
+
+    BackWarp backwarpModel = BackWarp(videoProcessor->getVideoWidth(), videoProcessor->getVideoHeight());
+    backwarpModel.to(device);
+
+    // TODO: load trained model params
+    for (auto param : interpolationModel.parameters()) {
+        // set require grad false
+    }
 }
 
 /**
@@ -88,6 +103,8 @@ void SlowMotionService::startService() {
                 torch::from_blob(bufferFrame.getXFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()}),
                 torch::from_blob(bufferFrame.getYFlow(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
             }, 1);
+
+        // TODO: use sdk for reverse flow vector
         torch::Tensor F_1_0 = torch::neg(F_0_1);
 
         // TODO: get frames I0 and I1
