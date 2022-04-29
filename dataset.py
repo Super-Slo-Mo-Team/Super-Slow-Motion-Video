@@ -20,6 +20,9 @@ def generateClips(videos, indices, outputPath):
                     "{}/{}".format(videoPath, frame),
                     "{}/{}/{}".format(outputPath, clipCounter, frame)
                 )
+
+                # TODO: generate forward and backward flow vectors
+
             clipCounter += 1
         
 def main():
