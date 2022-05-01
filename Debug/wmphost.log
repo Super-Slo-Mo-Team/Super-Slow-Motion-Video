@@ -1,0 +1,7 @@
+﻿cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  wmphost.cpp
+  CWMPHost.cpp
+  CWMPEventDispatch.cpp
+  Generating Code...
+CWMPEventDispatch.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
+  wmphost.vcxproj -> C:\Users\User\source\repos\WindowsSDK7-Samples-master\multimedia\WMP\cpp\WMPHost\Debug\wmphost.exe
