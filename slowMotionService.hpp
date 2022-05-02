@@ -16,6 +16,9 @@ class SlowMotionService {
         int slowmoFactor;
         int outputFps;
         string outputPath;
+        //pointers to loaded models, this is how they do it: https://medium.com/@albertsundjaja/deploying-trained-pytorch-model-in-c-2f61f46bacfe
+        shared_ptr<torch::jit::script::Module> interpolationModel;
+        shared_ptr<torch::jit::script::Module> backWarpModel;
         zmq::context_t context;
         zmq::socket_t flowRequester;
         VideoProcessor* videoProcessor;
