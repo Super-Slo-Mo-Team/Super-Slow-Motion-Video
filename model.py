@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from config import *
 
-class UNet(torch.nn.module):
+class UNet(torch.nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
         
@@ -139,10 +139,10 @@ class BackWarp(torch.nn.Module):
         #require torch 1.10.2
         xGrid, yGrid = torch.meshgrid(torch.arange(0,width,1),torch.arange(0,height,1), indexing="xy")
         
-        xGrid.requires_grad(False)
+        xGrid.requires_grad = False
         xGrid.to(device)
         
-        yGrid.requires_grad(False)
+        yGrid.requires_grad = False
         yGrid.to(device)
         
         self.xGrid = torch.clone(xGrid)
