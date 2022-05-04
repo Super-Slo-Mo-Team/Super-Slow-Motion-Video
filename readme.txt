@@ -1,7 +1,6 @@
-WMPHost sample
-
-This sample shows basic embedding of the Windows Media Player control in a C++ application.
-
-Note that this sample uses ATL. This means you must install Microsoft Visual Studio to compile this sample.
-
-Copyright (c) Microsoft Corporation. All rights reserved.
+Add this to the project configuration. In the preprocessor defintions object where under c/c++->Preprocesser
+WIN32
+_DEBUG
+_WINDOWS
+WINVER=0x0A00
+MY_SOLUTIONDIR=R"?($(SolutionDir))?"
