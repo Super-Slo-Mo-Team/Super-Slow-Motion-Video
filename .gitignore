@@ -15,10 +15,7 @@ service/*.dSYM
 
 # ignore vscode config settings
 service/.vscode
-model/.vscode/
+model/.vscode
 
-# ignore project dependent filenames
-service/*.mp4
-service/*.y4m
-service/*.mkv
-service/*.ckpt
+# ignore testing I/O
+IO/*
