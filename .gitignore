@@ -1,0 +1,24 @@
+# ignore python cache in model code
+model/__pycache__/
+
+# ignore data
+model/data.nosync/*
+
+# ignore backend C++ compilation executables
+service/build/*
+
+# ignore backend debug bundles
+service/*.dSYM
+
+# ignore Mac files
+**/.DS_Store
+
+# ignore vscode config settings
+service/.vscode
+model/.vscode/
+
+# ignore project dependent filenames
+service/*.mp4
+service/*.y4m
+service/*.mkv
+service/*.ckpt
