@@ -66,13 +66,24 @@ class DataSet(torch.utils.data.Dataset):
 
             if self.transform is not None:
                 image = self.transform(image)
+
             sample.append(image)
+
+        # TODO: generate F_0_1 and F_1_0
+        # F_0_1 = ...(sample[0], sample[-1])
+        # F_1_0 = ...(sample[0], sample[-1])
+        # TODO: crop, flip, transform
+        # sample.append(F_0_1)
+        # sample.append(F_1_0)
             
         return sample, returnIndex
 
     def __len__(self):
         return len(self.framesPath)
 
+#
+# Main training routine
+#
 def train():
     # helper function to calculate coefficients for F_t_0 and F_t_1
     def getFlowCoeff(indices, device):
@@ -101,15 +112,13 @@ def train():
         
         with torch.no_grad():
             for _, (validationData, validationFrameIndex) in enumerate(validationLoader, 0):
-                frame0, frameT, frame1 = validationData
+                frame0, frameT, frame1, F_0_1, F_1_0 = validationData
 
                 I0 = frame0.to(device)
                 I1 = frame1.to(device)
                 IFrame = frameT.to(device)
-                
-                # TODO: manually load in F_0_1 and F_1_0
-                F_0_1 = None
-                F_1_0 = None
+                F_0_1 = F_0_1.to(device)
+                F_1_0 = F_1_0.to(device)
 
                 fCoeff = getFlowCoeff(validationFrameIndex, device)
 
@@ -211,17 +220,15 @@ def train():
         
         for trainIndex, (trainData, trainFrameIndex) in enumerate(trainLoader, 0):
             # get the input and the target from the training set
-            frame0, frameT, frame1 = trainData
+            frame0, frameT, frame1, F_0_1, F_1_0 = trainData
             
             I0 = frame0.to(device)
             I1 = frame1.to(device)
             IFrame = frameT.to(device)
+            F_0_1 = F_0_1.to(device)
+            F_1_0 = F_1_0.to(device)
             
             optimizer.zero_grad()
-            
-            # TODO: manually load in
-            F_0_1 = None
-            F_1_0 = None
             
             fCoeff = getFlowCoeff(trainFrameIndex, device)
             
@@ -294,3 +301,5 @@ def train():
 
             torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(checkpoint_counter) + '.ckpt')
             checkpoint_counter += 1
+
+train()
