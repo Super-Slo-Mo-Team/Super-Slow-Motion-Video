@@ -10,7 +10,6 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
-
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -29,21 +28,21 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
-    "resource.h\0"
+"resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
+"#include ""afxres.h""\r\n"
+"\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
-    "\r\n"
-    "\0"
+"\r\n"
+"\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -56,36 +55,36 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
- FILEFLAGSMASK 0x3fL
+FILEVERSION 1, 0, 0, 1
+PRODUCTVERSION 1, 0, 0, 1
+FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
- FILEFLAGS 0x1L
+FILEFLAGS 0x1L
 #else
- FILEFLAGS 0x0L
+FILEFLAGS 0x0L
 #endif
- FILEOS 0x4L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
+FILEOS 0x4L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
 BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904B0"
-        BEGIN
-            VALUE "CompanyName", "Microsoft\0"
-            VALUE "FileDescription", "WMPHost\0"
-            VALUE "FileVersion", "1, 0, 0, 1\0"
-            VALUE "InternalName", "WMPHost\0"
-            VALUE "LegalCopyright", "Copyright 2002\0"
-            VALUE "OriginalFilename", "wmphost.exe\0"
-            VALUE "ProductName", "WMPHost\0"
-            VALUE "ProductVersion", "1, 0, 0, 1\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
+BLOCK "StringFileInfo"
+BEGIN
+BLOCK "040904B0"
+BEGIN
+VALUE "CompanyName", "Microsoft\0"
+VALUE "FileDescription", "WMPHost\0"
+VALUE "FileVersion", "1, 0, 0, 1\0"
+VALUE "InternalName", "WMPHost\0"
+VALUE "LegalCopyright", "Copyright 2002\0"
+VALUE "OriginalFilename", "wmphost.exe\0"
+VALUE "ProductName", "WMPHost\0"
+VALUE "ProductVersion", "1, 0, 0, 1\0"
+END
+END
+BLOCK "VarFileInfo"
+BEGIN
+VALUE "Translation", 0x409, 1200
+END
 END
 
 #endif    // !_MAC
@@ -96,57 +95,57 @@ END
 // Menu
 //
 
-IDR_MENU1 MENU DISCARDABLE 
+IDR_MENU1 MENU DISCARDABLE
 BEGIN
-    POPUP "&File"
-    BEGIN
-        MENUITEM "&Open URL",                   ID_FILE_OPEN
-        MENUITEM "E&xit",                       ID_APP_EXIT
-    END
-    POPUP "Interfaces"
-    BEGIN
-        MENUITEM "IWMPCore",                    ID_WMPCORE, INACTIVE
-        MENUITEM "    close",                   ID_WMPCORE_CLOSE
-        MENUITEM "    URL",                     ID_WMPCORE_URL
-        MENUITEM "    openState",               ID_WMPCORE_OPENSTATE
-        MENUITEM "    playState",               ID_WMPCORE_PLAYSTATE
-        MENUITEM "    controls",                ID_WMPCORE_CONTROLS
-        MENUITEM "    settings",                ID_WMPCORE_SETTINGS
-        MENUITEM "    currentMedia",            ID_WMPCORE_CURRENTMEDIA
-        MENUITEM "    mediaCollection",         ID_WMPCORE_MEDIACOLLECTION
-        MENUITEM "    playlistCollection",      ID_WMPCORE_PLAYLISTCOLLECTION
+POPUP "&File"
+BEGIN
+MENUITEM "&Open URL", ID_FILE_OPEN
+MENUITEM "E&xit", ID_APP_EXIT
+END
+POPUP "Interfaces"
+BEGIN
+MENUITEM "IWMPCore", ID_WMPCORE, INACTIVE
+MENUITEM "    close", ID_WMPCORE_CLOSE
+MENUITEM "    URL", ID_WMPCORE_URL
+MENUITEM "    openState", ID_WMPCORE_OPENSTATE
+MENUITEM "    playState", ID_WMPCORE_PLAYSTATE
+MENUITEM "    controls", ID_WMPCORE_CONTROLS
+MENUITEM "    settings", ID_WMPCORE_SETTINGS
+MENUITEM "    currentMedia", ID_WMPCORE_CURRENTMEDIA
+MENUITEM "    mediaCollection", ID_WMPCORE_MEDIACOLLECTION
+MENUITEM "    playlistCollection", ID_WMPCORE_PLAYLISTCOLLECTION
 
-        MENUITEM "    versionInfo",             ID_WMPCORE_VERSIONINFO
-        MENUITEM "    launchURL",               ID_WMPCORE_LAUNCHURL
-        MENUITEM "    network",                 ID_WMPCORE_NETWORK
-        MENUITEM "    currentPlaylist",         ID_WMPCORE_CURRENTPLAYLIST
-        MENUITEM "    cdromCollection",         ID_WMPCORE_CDROMCOLLECTION
-        MENUITEM "    closedCaption",           ID_WMPCORE_CLOSEDCAPTION
-        MENUITEM "    isOnline",                ID_WMPCORE_ISONLINE
-        MENUITEM "    error",                   ID_WMPCORE_ERROR
-        MENUITEM "    status",                  ID_WMPCORE_STATUS
+MENUITEM "    versionInfo", ID_WMPCORE_VERSIONINFO
+MENUITEM "    launchURL", ID_WMPCORE_LAUNCHURL
+MENUITEM "    network", ID_WMPCORE_NETWORK
+MENUITEM "    currentPlaylist", ID_WMPCORE_CURRENTPLAYLIST
+MENUITEM "    cdromCollection", ID_WMPCORE_CDROMCOLLECTION
+MENUITEM "    closedCaption", ID_WMPCORE_CLOSEDCAPTION
+MENUITEM "    isOnline", ID_WMPCORE_ISONLINE
+MENUITEM "    error", ID_WMPCORE_ERROR
+MENUITEM "    status", ID_WMPCORE_STATUS
 
-        MENUITEM "IWMPCore2",                   ID_WMPCORE2, INACTIVE
-        MENUITEM "    dvd",                     ID_WMPCORE2_DVD
-        MENUITEM "IWMPlayer",                   ID_WMPPLAYER, INACTIVE
-        MENUITEM "    enabled",                 ID_WMPPLAYER_ENABLED
-        MENUITEM "    fullScreen",              ID_WMPPLAYER_FULLSCREEN
-        MENUITEM "    enableContextMenu",       ID_WMPPLAYER_ENABLECONTEXTMENU
+MENUITEM "IWMPCore2", ID_WMPCORE2, INACTIVE
+MENUITEM "    dvd", ID_WMPCORE2_DVD
+MENUITEM "IWMPlayer", ID_WMPPLAYER, INACTIVE
+MENUITEM "    enabled", ID_WMPPLAYER_ENABLED
+MENUITEM "    fullScreen", ID_WMPPLAYER_FULLSCREEN
+MENUITEM "    enableContextMenu", ID_WMPPLAYER_ENABLECONTEXTMENU
 
-        MENUITEM "    uiMode",                  ID_WMPPLAYER_UIMODE
-        MENUITEM "IWMPlayer2",                  ID_WMPPLAYER2, INACTIVE
-        MENUITEM "    stretchToFit",            ID_WMPPLAYER2_STRETCHTOFIT
-    END
-    POPUP "Select Speed"
-    BEGIN
-        MENUITEM "2x Slower Speed",             ID_2xOption
-        MENUITEM "3x Slower Speed",             ID_3xOption
-        MENUITEM "4x Slower Speed",             ID_4xOption
-    END
-    MENUITEM     "&Select Folder",              ID_WMPCORE_SELECTFOLDER
-    MENUITEM     "Process Video",               ID_TESTSHELL
-    MENUITEM     "Play Slo-mo Video",           ID_PLAYSLOMO
-
+MENUITEM "    uiMode", ID_WMPPLAYER_UIMODE
+MENUITEM "IWMPlayer2", ID_WMPPLAYER2, INACTIVE
+MENUITEM "    stretchToFit", ID_WMPPLAYER2_STRETCHTOFIT
+END
+POPUP "Select Speed"
+BEGIN
+MENUITEM "2x Slower Speed", ID_2xOption
+MENUITEM "3x Slower Speed", ID_3xOption
+MENUITEM "4x Slower Speed", ID_4xOption
+END
+MENUITEM     "&Select Folder", ID_WMPCORE_SELECTFOLDER
+MENUITEM     "Process Video", ID_TESTSHELL
+MENUITEM     "Play Slo-mo Video", ID_PLAYSLOMO
+MENUITEM     "&Trim Video"                  ID_TRIMVIDEO
 END
 
 
@@ -172,22 +171,25 @@ STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Open URL"
 FONT 9, "Segoe UI", 0, 0, 0x1
 BEGIN
-    EDITTEXT        IDC_FILEOPEN_EDIT,7,25,235,14,ES_AUTOHSCROLL | WS_GROUP
-    PUSHBUTTON      "...",IDC_FILEOPEN_BROWSE,246,26,21,14,0,
-                    WS_EX_CLIENTEDGE
-    DEFPUSHBUTTON   "OK",IDOK,160,53,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,217,53,50,14
-    LTEXT           "Enter URL to play:",IDC_STATIC,7,7,59,8
+EDITTEXT        IDC_FILEOPEN_EDIT, 7, 25, 235, 14, ES_AUTOHSCROLL | WS_GROUP
+PUSHBUTTON      "...", IDC_FILEOPEN_BROWSE, 246, 26, 21, 14, 0,
+WS_EX_CLIENTEDGE
+DEFPUSHBUTTON   "OK", IDOK, 160, 53, 50, 14
+PUSHBUTTON      "Cancel", IDCANCEL, 217, 53, 50, 14
+LTEXT           "Enter URL to play:", IDC_STATIC, 7, 7, 59, 8
 END
 
-IDD_STRING_DIALOG DIALOG DISCARDABLE  0, 0, 244, 50
+IDD_STRING_DIALOG DIALOG DISCARDABLE  0, 0, 344, 150
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Property"
+CAPTION "Trim Video"
 FONT 9, "Segoe UI"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,123,29,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,183,29,50,14
-    EDITTEXT        IDC_STRING_EDIT,7,7,226,13,ES_AUTOHSCROLL
+DEFPUSHBUTTON   "OK", IDOK, 123, 80, 50, 14
+PUSHBUTTON      "Cancel", IDCANCEL, 183, 80, 50, 14
+CTEXT           "Start: ", IDC_STATIC, 0, 9, 44, 33
+EDITTEXT         IDC_STRING_EDIT1, 67, 7, 226, 13, ES_AUTOHSCROLL
+CTEXT           "End: ", IDC_STATIC, 0, 29, 44, 33
+EDITTEXT         IDC_STRING_EDIT2, 67, 27, 226, 13, ES_AUTOHSCROLL
 END
 
 IDD_BOOLEAN_DIALOG DIALOG DISCARDABLE  0, 0, 125, 58
@@ -195,13 +197,44 @@ STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Boolean"
 FONT 9, "Segoe UI"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,7,37,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,68,37,50,14
-    CONTROL         "VARIANT_TRUE",IDC_BOOLEAN_TRUE,"Button",
-                    BS_AUTORADIOBUTTON,7,7,85,10
-    CONTROL         "VARIANT_FALSE",IDC_BOOLEAN_FALSE,"Button",
-                    BS_AUTORADIOBUTTON,7,21,85,10
+DEFPUSHBUTTON   "OK", IDOK, 7, 37, 50, 14
+PUSHBUTTON      "Cancel", IDCANCEL, 68, 37, 50, 14
+CONTROL         "VARIANT_TRUE", IDC_BOOLEAN_TRUE, "Button",
+BS_AUTORADIOBUTTON, 7, 7, 85, 10
+CONTROL         "VARIANT_FALSE", IDC_BOOLEAN_FALSE, "Button",
+BS_AUTORADIOBUTTON, 7, 21, 85, 10
 END
+
+IDD_UPDOWNDIALOG DIALOGEX 0, 0, 260, 183
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Process"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+DEFPUSHBUTTON   "OK", IDOK, 7, 37, 50, 14, WS_GROUP
+END
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+IDD_UPDOWNDIALOG, DIALOG
+BEGIN
+LEFTMARGIN, 7
+RIGHTMARGIN, 252
+TOPMARGIN, 7
+BOTTOMMARGIN, 176
+END
+END
+#endif    // APSTUDIO_INVOKED
+
+//IDD_STRING_DIALOG DIALOG DISCARDABLE  0, 0, 244, 50
+//STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+//CAPTION "Trim Video"
+//FONT 9, "Segoe UI"
+//BEGIN
+//    DEFPUSHBUTTON   "OK", IDOK, 123, 29, 50, 14
+//    PUSHBUTTON      "Cancel", IDCANCEL, 183, 29, 50, 14
+//    EDITTEXT        IDC_STRING_EDIT, 7, 7, 226, 13, ES_AUTOHSCROLL
+//END
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -210,23 +243,23 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
-    IDD_STRING_DIALOG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 237
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 43
-    END
+IDD_STRING_DIALOG, DIALOG
+BEGIN
+LEFTMARGIN, 7
+RIGHTMARGIN, 237
+TOPMARGIN, 7
+BOTTOMMARGIN, 43
+END
 
-    IDD_BOOLEAN_DIALOG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 118
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 51
-    END
+IDD_BOOLEAN_DIALOG, DIALOG
+BEGIN
+LEFTMARGIN, 7
+RIGHTMARGIN, 118
+TOPMARGIN, 7
+BOTTOMMARGIN, 51
+END
 END
 #endif    // APSTUDIO_INVOKED
 
