@@ -22,10 +22,10 @@ public:
         MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         MESSAGE_HANDLER(WM_SIZE, OnSize)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnErase)
-        MESSAGE_HANDLER(WM_CONTEXTMENU, FowardMsgToWMP)
-
+        //MESSAGE_HANDLER(WM_CONTEXTMENU, FowardMsgToWMP)
         COMMAND_ID_HANDLER(ID_FILE_OPEN, OnFileOpen)
         COMMAND_ID_HANDLER(ID_APP_EXIT, OnFileExit)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 
         COMMAND_ID_HANDLER(ID_WMPCORE_CLOSE, OnWMPCoreClose)
         COMMAND_ID_HANDLER(ID_WMPCORE_URL, OnWMPCoreURL)
@@ -50,27 +50,30 @@ public:
         COMMAND_ID_HANDLER(ID_TESTSHELL, OnTestShell)
 
         COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLED, OnWMPPlayerEnabled)
-        COMMAND_ID_HANDLER(ID_WMPPLAYER_FULLSCREEN, OnWMPPlayerFullScreen)        
-        COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLECONTEXTMENU, OnWMPPlayerEnableContextMenu)        
-        COMMAND_ID_HANDLER(ID_WMPPLAYER_UIMODE, OnWMPPlayerUIMode)        
-        COMMAND_ID_HANDLER(ID_WMPPLAYER2_STRETCHTOFIT, OnWMPPlayer2StretchToFit)        
+        COMMAND_ID_HANDLER(ID_WMPPLAYER_FULLSCREEN, OnWMPPlayerFullScreen)
+        COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLECONTEXTMENU, OnWMPPlayerEnableContextMenu)
+        COMMAND_ID_HANDLER(ID_WMPPLAYER_UIMODE, OnWMPPlayerUIMode)
+        COMMAND_ID_HANDLER(ID_WMPPLAYER2_STRETCHTOFIT, OnWMPPlayer2StretchToFit)
         COMMAND_ID_HANDLER(ID_2xOption, twoxOption)
         COMMAND_ID_HANDLER(ID_3xOption, threexOption)
         COMMAND_ID_HANDLER(ID_4xOption, fourxOption)
         COMMAND_ID_HANDLER(ID_PLAYSLOMO, PlaySlomo)
+        COMMAND_ID_HANDLER(ID_TRIMVIDEO, TrimVideo)
+        MESSAGE_HANDLER(WM_COMMAND, OpenModal)
 
     END_MSG_MAP()
 
     void OnFinalMessage(HWND /*hWnd*/);
 
-    LRESULT OnDestroy(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& bHandled );
+    LRESULT OnDestroy(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& bHandled);
     LRESULT OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
 
     LRESULT OnErase(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnFileExit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    
+    LRESULT OnPaint(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
+
     LRESULT OnWMPCoreClose(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPCoreURL(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPCoreOpenState(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
@@ -86,21 +89,31 @@ public:
     LRESULT OnWMPPlayerFullScreen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPPlayerEnableContextMenu(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPPlayerUIMode(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
- 
+
     LRESULT OnWMPPlayer2StretchToFit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    //LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
 
     LRESULT twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    LRESULT OnFullScreen(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
+    LRESULT OpenModal(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
+    LRESULT registerPopupClass(HINSTANCE hInst);
+    LRESULT displayPopup(HWND hwnd);
+    BOOL OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
 
-    BSTR Concat(BSTR a, BSTR b);
     BSTR extract_filename(BSTR path);
 
     CAxWindow                   m_wndView;
     CComPtr<IWMPPlayer>         m_spWMPPlayer;
     CComPtr<IConnectionPoint>   m_spConnectionPoint;
     DWORD                       m_dwAdviseCookie;
+    HWND                        open_modal;
+    HWND                        popUp_hWnd;
+    WNDCLASSW                   popup = { 0 };
+    HWND                         hDlg;
+
 };

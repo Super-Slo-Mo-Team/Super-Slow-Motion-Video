@@ -1,3 +1,6 @@
-﻿  CWMPHost.cpp
+﻿  CWMPEventDispatch.cpp
+  CWMPHost.cpp
   The contents of <filesystem> are available only with C++17 or later.
-  wmphost.vcxproj -> C:\Users\User\source\repos\WindowsSDK7-Samples-master\multimedia\WMP\cpp\WMPHost\x64\Debug\wmphost.exe
+  wmphost.cpp
+  Generating Code...
+  wmphost.vcxproj -> C:\Users\User\source\repos\Super-Slow-Motion-Video\x64\Debug\wmphost.exe
