@@ -22,7 +22,7 @@ bool FAILMSG(HRESULT hr)
 }
 /////////////////////////////////////////////////////////////////////////////
 // CFolderOpenDlg
-class CFolderPickerDialog : public CDialogImpl<CFolderPickerDialog>{
+class CFolderPickerDialog : public CDialogImpl<CFolderPickerDialog> {
 
     BEGIN_MSG_MAP(CFolderOpenDlg)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
@@ -30,7 +30,7 @@ class CFolderPickerDialog : public CDialogImpl<CFolderPickerDialog>{
         COMMAND_ID_HANDLER(IDCANCEL, OnEndDialog)
         COMMAND_ID_HANDLER(IDC_FOLDEROPEN_BROWSE, OnBrowse)
     END_MSG_MAP()
-    
+
     LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
         ::SetFocus(GetDlgItem(IDC_FOLDEROPEN_EDIT));
@@ -107,11 +107,11 @@ class CFileOpenDlg : public CDialogImpl<CFileOpenDlg>
 
         ofn.lStructSize = sizeof(ofn);
         ofn.lpstrFile = wszFileName;
-        ofn.nMaxFile = sizeof(wszFileName)/sizeof(wszFileName[0]);
+        ofn.nMaxFile = sizeof(wszFileName) / sizeof(wszFileName[0]);
         ofn.lpstrDefExt = NULL;
         ofn.Flags = OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER;
         ofn.lpstrFilter = L"All files\0*.*\0";
-        ofn.nFilterIndex = 0; 
+        ofn.nFilterIndex = 0;
         ofn.hwndOwner = m_hWnd;
         ofn.hInstance = _Module.GetResourceInstance();
 
@@ -140,7 +140,7 @@ class CStringDlg : public CDialogImpl<CStringDlg>
         COMMAND_ID_HANDLER(IDCANCEL, OnEndDialog)
     END_MSG_MAP()
 
-    CStringDlg(const WCHAR *wszTitle = NULL, const WCHAR *wszInitialValue = NULL)
+    CStringDlg(const WCHAR* wszTitle = NULL, const WCHAR* wszInitialValue = NULL)
     {
         m_bstrTitle = wszTitle;
         m_bstrValue = wszInitialValue;
@@ -153,26 +153,37 @@ class CStringDlg : public CDialogImpl<CStringDlg>
             SetWindowText(m_bstrTitle);
         }
 
-        if (m_bstrValue)
+        if (m_bstrValue1)
         {
-            SetDlgItemText(IDC_STRING_EDIT, m_bstrValue);
+            SetDlgItemText(IDC_STRING_EDIT1, m_bstrValue1);
+
+        }
+        if (m_bstrValue2)
+        {
+            SetDlgItemText(IDC_STRING_EDIT2, m_bstrValue2);
+
         }
 
-        ::SetFocus(GetDlgItem(IDC_STRING_EDIT));
+        ::SetFocus(GetDlgItem(IDC_STRING_EDIT1));
+        ::SetFocus(GetDlgItem(IDC_STRING_EDIT2));
+
         CenterWindow();
 
         return 0;
     }
     LRESULT OnEndDialog(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
     {
-        GetDlgItemText(IDC_STRING_EDIT, m_bstrValue.m_str);
+        GetDlgItemText(IDC_STRING_EDIT1, m_bstrValue1.m_str);
+        GetDlgItemText(IDC_STRING_EDIT2, m_bstrValue2.m_str);
+
         EndDialog(wID);
         return 0;
     }
 
     enum { IDD = IDD_STRING_DIALOG };
-
     CComBSTR m_bstrValue;
+    CComBSTR m_bstrValue1;
+    CComBSTR m_bstrValue2;
     CComBSTR m_bstrTitle;
 };
 
@@ -187,7 +198,7 @@ class CBooleanDlg : public CDialogImpl<CBooleanDlg>
         COMMAND_ID_HANDLER(IDCANCEL, OnEndDialog)
     END_MSG_MAP()
 
-    CBooleanDlg(const WCHAR *wszTitle = NULL, VARIANT_BOOL fInitialValue = VARIANT_FALSE)
+    CBooleanDlg(const WCHAR* wszTitle = NULL, VARIANT_BOOL fInitialValue = VARIANT_FALSE)
     {
         m_bstrTitle = wszTitle;
         m_fValue = fInitialValue;
@@ -199,7 +210,7 @@ class CBooleanDlg : public CDialogImpl<CBooleanDlg>
         {
             SetWindowText(m_bstrTitle);
         }
-        
+
         CheckRadioButton(IDC_BOOLEAN_TRUE, IDC_BOOLEAN_FALSE, (VARIANT_TRUE == m_fValue) ? IDC_BOOLEAN_TRUE : IDC_BOOLEAN_FALSE);
 
         CenterWindow();
