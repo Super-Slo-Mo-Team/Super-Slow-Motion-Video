@@ -910,16 +910,19 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
 
     CString solutionCString = MY_SOLUTIONDIR;
     OutputDebugString(selected_folder_macro);
-
     //ffmpeg -ss 00:01:00 -to 00:02:00 -i input.mp4 -c copy output.mp4
-    auto time_start = Concat(SysAllocString(L"ffmpeg -ss "), SysAllocString(start));
-    auto second_command = Concat(time_start, SysAllocString(L" -to "));
-    auto time_end = Concat(second_command, SysAllocString(end));
-    auto third_command = Concat(time_end, SysAllocString(L" -i "));
-    auto input_file_name = Concat(third_command, SysAllocString(SELECTED_VIDEO_MACRO));
-    auto fourth_command = Concat(input_file_name, SysAllocString(L" -c copy "));
-    auto output_file_folder = Concat(fourth_command, SysAllocString(selected_folder_macro));
-    auto output_file_folder_with_slash = Concat(output_file_folder, SysAllocString(L"\\"));
+    auto time_start = Concat(SysAllocString(L"ffmpeggtest.bat "), SysAllocString(start));
+    auto time_start_space = Concat(SysAllocString(time_start), SysAllocString(L" "));
+    auto time_end = Concat(time_start_space, SysAllocString(end));
+    auto time_end_space = Concat(SysAllocString(time_end), SysAllocString(L" "));
+
+    auto input_file_name = Concat(time_end_space, SysAllocString(SELECTED_VIDEO_MACRO));
+    auto input_file_name_space = Concat(SysAllocString(input_file_name), SysAllocString(L" "));
+
+    auto output_file_folder = Concat(input_file_name_space, SysAllocString(selected_folder_macro));
+    auto output_file_folder_space = Concat(SysAllocString(output_file_folder), SysAllocString(L" "));
+
+    auto output_file_folder_with_slash = Concat(output_file_folder_space, SysAllocString(L"\\"));
     std::wstring wstr(SELECTED_VIDEOFILENAME_MACRO);
     size_t period = 0;
     size_t len = wstr.length();
@@ -934,31 +937,15 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
 
     BSTR file_wo_mp4 = SysAllocString(retString.c_str());
     BSTR extension = SysAllocString(extensionwstr.c_str());
-    OutputDebugString(L"\n\n");
-    OutputDebugString(file_wo_mp4);
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-    OutputDebugString(extension);
-    OutputDebugString(L"\n\n");
 
 
-    auto output_file_name = Concat(output_file_folder_with_slash, SysAllocString(file_wo_mp4));
+
+    auto output_file_name = Concat(output_file_folder_with_slash, file_wo_mp4);
 
     auto penultimate = Concat(output_file_name, SysAllocString(L"_trimmed"));
     auto final_result = Concat(penultimate, SysAllocString(extension));
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-
-    OutputDebugString(output_file_name);
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-    OutputDebugString(L"\n\n");
-
-    OutputDebugString(final_result);
-    OutputDebugString(L"\n\n");
-    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
+ 
+    ShellExecute(NULL, _T("open"),_T("cmd.exe"), final_result, NULL, SW_SHOW);
     return 0;
 }
 BOOL CWMPHost::OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
