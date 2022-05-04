@@ -4,8 +4,6 @@
 #include "config.hpp"
 
 #include <zhelpers.hpp>
-
-//header for torchscript
 #include <torch/script.h>
 #include <iostream>
 
@@ -52,47 +50,29 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     // create frame reader to interface directly with video frames
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
 
-    // TODO: initialize device correctly
-    /*torch::DeviceType device_type;
-    // device_type = torch::kCuda;
-    torch::Device device(device_type);
+    // TODO: model names
 
-    // TODO: create models
-    UNet interpolationModel = UNet();
-    interpolationModel.to(device);
+    // initialize models from torchscript
+    try {
+        interpolationModel = torch::jit::load("NAME OF SAVED INTERPOLATION MODEL");
+    } catch (const c10::Error& e) {
+        cout << "Error loading Frame Interpolation model\n" << endl;
+        exit(EXIT_FAILURE);
+    }
 
-    BackWarp backwarpModel = BackWarp(videoProcessor->getVideoWidth(), videoProcessor->getVideoHeight());
-    backwarpModel.to(device);
-    */
+    try {
+        backWarpModel = torch::jit::load("NAME OF SAVED BACKWARP MODEL");
+    } catch (const c10::Error& e) {
+        cerr << "Error loading BackWarp model\n" << endl;
+        exit(EXIT_FAILURE);
+    }
 
-    //load models from torchscript:
-    
+    // load models to device
     torch::DeviceType device = torch::kCUDA;
-    try {
-        // Deserialize the ScriptModule from a file using torch::jit::load().
-        this->interpolationModel = torch::jit::load("NAME OF SAVED INTERPOLATION MODEL");
-    }
-    catch (const c10::Error& e) {
-        std::cerr << "error loading the model\n";
-        return -1;
-    }
-
-    this->interpolationModel.to(device);
-
-    try {
-        // Deserialize the ScriptModule from a file using torch::jit::load().
-        this->backwarpModel= torch::jit::load("NAME OF SAVED BACKWARP MODEL");
-    }
-    catch (const c10::Error& e) {
-        std::cerr << "error loading the model\n";
-        return -1;
-    }
-    
-    this->backwarpModel.to(device);
-    
+    interpolationModel.to(device);
+    backWarpModel.to(device);
 
     // TODO: load trained model params
-    
     //for (auto param : interpolationModel.parameters()) {
         // set require grad false
     //}
@@ -137,8 +117,7 @@ void SlowMotionService::startService() {
         
         F_0_1.to(device);
         
-
-        // !!!!  TODO: use sdk for reverse flow vector !!!! 
+        // TODO: use sdk for reverse flow vector
         // this will need to place in the input vector, and placed on GPU with .to(device)
         torch::Tensor F_1_0 = torch::neg(F_0_1);
 
@@ -148,32 +127,27 @@ void SlowMotionService::startService() {
         torch::Tensor I1 = framePair[1].to(device);
         
         // generate intermediate frames
-        for(float i = 1; i != slowmoFactor; i++){
-            
-            float t = i / slowmoFactor; 
+        for(float i = 1; i != slowmoFactor; i++) {
+            float t = i / slowmoFactor;
             float fCoeff0 = -t * (1-t);
             float fCoeff1 = t * t;
             float fCoeff2 = (1-t) * (1-t);
             float fCoeff3 = fCoeff0;
 
-
             torch::Tensor F_t_0 = torch::add((fCoeff0 * F_0_1), (fCoeff1 * F_1_0));
             torch::Tensor F_t_1 = torch::add((fCoeff2 * F_0_1), (fCoeff3 * F_1_0));
-            F_t_0.to(device); 
-            F_t_1.to(device); 
-            
+            F_t_0.to(device);
+            F_t_1.to(device);
 
-            //first pass of backwarp
+            // first pass of backwarp
             std::vector<torch::jit::IValue> backWarpInput;
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0);
-            
             
             torch::Tensor g_I0_F_t_0 = this->backWarpModel.forward(backWarpInput).toTensor();
             g_I0_F_t_0.to(device);
 
             backWarpInput.clear();
-
           
             backWarpInput.push_back(I1);
             backWarpInput.push_back(F_t_1);
@@ -182,9 +156,9 @@ void SlowMotionService::startService() {
             g_I0_F_t_1.to(device);
 
             backWarpInput.clear();
-            //
-            //interpolation
-            //?? do these need to be concatenated then placed as a single tensor into the vector??
+
+            // interpolation
+            // TODO: do these need to be concatenated then placed as a single tensor into the vector??
             std::vector<torch::jit::IValue> interpolationInput;
             interpolationInput.push_back(I0);
             interpolationInput.push_back(I1);
@@ -195,7 +169,6 @@ void SlowMotionService::startService() {
             interpolationInput.push_back(g_I1_F_t_1);
             interpolationInput.push_back(g_I0_F_t_0);
 
-
             torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
 
             torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
@@ -205,7 +178,7 @@ void SlowMotionService::startService() {
             torch::Tensor V_t_0 = torch::sigmoid(temp);
             torch::Tensor V_t_1 = 1 - V_t_0;
 
-            //second pass of backwarp network
+            // second pass of backwarp network
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0_f);
 
@@ -221,8 +194,7 @@ void SlowMotionService::startService() {
             float wCoeff0 = 1-t;
             float wCoeff1 = t;
 
-            //creates img tensor, converts to vector of char, then written to interpolation directory
-
+            // creates img tensor, converts to vector of char, then written to interpolation directory
             torch::Tensor Ft_p = (wCoeff0 * V_t_0 * g_I0_F_t_0_f + wCoeff1 * V_t_1 * g_I1_F_t_1_f ) / (wCoeff0 * V_t_0 + wCoeff1 * V_t_1);
 
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
@@ -233,9 +205,8 @@ void SlowMotionService::startService() {
 
             ofstream writeOut(imgName,ofstream::binary);
             writeOut.write(&imgFile[0],imgFile.size());
-            
-
         }
+
         firstFrameIndex += slowmoFactor;
     }
 
