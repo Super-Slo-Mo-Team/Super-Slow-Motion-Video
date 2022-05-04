@@ -775,7 +775,7 @@ LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
     auto slowdown = SysAllocString(SELECTED_SLOWDOWN_MACRO);
     auto videoarg = SysAllocString(L"Output_");
     auto x_letter = SysAllocString(L"X");
-    auto extension = SysAllocString(L".mkv");
+    auto extension = SysAllocString(L".mp4");
     auto penultimate_concat = Concat(videoarg, slowdown);
     auto final_concat_insertion = Concat(penultimate_concat, x_letter);
     auto final_video = Concat(final_concat_insertion, extension);
@@ -1018,8 +1018,11 @@ BOOL OnInitUpdownDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
 //  PURPOSE:  Processes messages for the Updown control dialog.
 //
 //
-LRESULT OnOk(HWND hWnd, int /*id*/, HWND /*hWndCtl*/, UINT codeNotify) {
-    if (codeNotify == 0) {
+LRESULT OnOk(HWND hWnd, int id, HWND /*hWndCtl*/ , UINT /*codeNotify*/) {
+
+
+
+    if (id == 1) {
         TCHAR* TBuf = 0;
         int BufSize = 0;
         BufSize = Edit_GetTextLength(hEdit) + 1;
@@ -1031,7 +1034,7 @@ LRESULT OnOk(HWND hWnd, int /*id*/, HWND /*hWndCtl*/, UINT codeNotify) {
         OutputDebugString(TBuf);
 
         CString solutionCString = MY_SOLUTIONDIR;
-        auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat");
+        auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
 
         BSTR solutionBSTR = solutionCString.AllocSysString();
         BSTR cmd = Concat(solutionBSTR, restOfFile);
@@ -1041,7 +1044,8 @@ LRESULT OnOk(HWND hWnd, int /*id*/, HWND /*hWndCtl*/, UINT codeNotify) {
         BSTR slowdownArg = SysAllocString(TBuf);
 
         auto first_result = Concat(cmd, videoArg);
-        auto second_result = Concat(first_result, space);
+        auto second_result = Concat(space,first_result);
+
         auto final_result = Concat(second_result, slowdownArg);
         // OutputDebugString(final_result);
 
