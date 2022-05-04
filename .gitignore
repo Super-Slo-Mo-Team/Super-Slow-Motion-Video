@@ -1,5 +1,5 @@
 # ignore python cache in model code
-model/__pycache__/
+model/__pycache__/*
 
 # ignore data
 model/data.nosync/*
