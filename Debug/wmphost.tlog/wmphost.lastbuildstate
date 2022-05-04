@@ -1,2 +1,7 @@
+<<<<<<< Updated upstream
 PlatformToolSet=v143:VCToolArchitecture=Native32Bit:VCToolsVersion=14.30.30705:TargetPlatformVersion=10.0.19041.0:
 Debug|Win32|C:\Users\User\source\repos\WindowsSDK7-Samples-master\multimedia\WMP\cpp\WMPHost\|
+=======
+PlatformToolSet=v143:VCToolArchitecture=Native32Bit:VCToolsVersion=14.31.31103:TargetPlatformVersion=10.0.19041.0:
+Debug|Win32|C:\Users\User\Source\Repos\Super-Slow-Motion-Video\|
+>>>>>>> Stashed changes
