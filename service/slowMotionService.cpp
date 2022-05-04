@@ -153,7 +153,7 @@ void SlowMotionService::startService() {
             backWarpInput.push_back(F_t_1);
             
             torch::Tensor g_I1_F_t_1 = this->backWarpModel.forward(backWarpInput).toTensor();
-            g_I0_F_t_1.to(device);
+            g_I1_F_t_1.to(device);
 
             backWarpInput.clear();
 
