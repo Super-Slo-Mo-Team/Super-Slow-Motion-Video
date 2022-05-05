@@ -21,11 +21,7 @@ def generateClips(videos, indices, outputPath):
                     "{}/{}/{}".format(outputPath, clipCounter, frame)
                 )
 
-                # TODO: generate forward and backward flow vectors
-
             clipCounter += 1
-
-# TODO: convert to .yuv
 
 def main():
     # get list of dataset videos
@@ -66,6 +62,11 @@ def main():
     indices = sorted(random.sample(range(len(os.listdir(TRAINING_TEST_PATH))), 100))
     for index in indices:
         move("{}/{}".format(TRAINING_TEST_PATH, index), "{}/{}".format(TRAINING_VALIDATE_PATH, index))
+
+    # create directory for training checkpoints
+    os.mkdir(TRAINING_CHECKPOINT_PATH)
+
+    # TODO: remove unnecessary data
 
 if __name__ == "__main__":
     main()

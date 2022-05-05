@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // TODO: make all temp directories
+    // TODO: make all temp directories (ROOT_PATH, YUV_PATH, FLO_PATH, R_FRAME_PATH, I_FRAME_PATH)
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();

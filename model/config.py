@@ -1,12 +1,13 @@
 # Path Macros
 
-TRAINING_ROOT_PATH          = './data.nosync'
-VIDEO_DATASET_PATH          = './data.nosync/original_high_fps_videos'
-TRAINING_TMP_PATH           = './data.nosync/tmp'
-TRAINING_TRAIN_PATH         = './data.nosync/train'
-TRAINING_TEST_PATH          = './data.nosync/test'
-TRAINING_VALIDATE_PATH      = './data.nosync/validate'
-TRAINING_CHECKPOINT_PATH    = './data.nosync/checkpoints'
+TRAINING_ROOT_PATH          = 'data.nosync'
+DATASET_FOLDER_NAME         = 'original_high_fps_videos'
+VIDEO_DATASET_PATH          = TRAINING_ROOT_PATH + '/' + DATASET_FOLDER_NAME
+TRAINING_TMP_PATH           = TRAINING_ROOT_PATH + '/tmp'
+TRAINING_TRAIN_PATH         = TRAINING_ROOT_PATH + '/train'
+TRAINING_TEST_PATH          = TRAINING_ROOT_PATH + '/test'
+TRAINING_VALIDATE_PATH      = TRAINING_ROOT_PATH + '/validate'
+TRAINING_CHECKPOINT_PATH    = 'checkpoints'
 
 # Training Macros
 

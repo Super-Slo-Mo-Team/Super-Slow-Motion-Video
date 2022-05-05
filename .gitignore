@@ -19,9 +19,5 @@ service/*.dSYM
 # ignore libtorch
 libtorch/*
 
-
-
-
-
 # ignore testing I/O
 IO/*

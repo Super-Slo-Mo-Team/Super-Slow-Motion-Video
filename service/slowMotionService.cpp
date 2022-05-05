@@ -50,18 +50,16 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     // create frame reader to interface directly with video frames
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
 
-    // TODO: model names
-
     // initialize models from torchscript
     try {
-        interpolationModel = torch::jit::load("NAME OF SAVED INTERPOLATION MODEL");
+        interpolationModel = torch::jit::load(FRAME_INTERPOLATION_MODEL_PATH);
     } catch (const c10::Error& e) {
         cout << "Error loading Frame Interpolation model\n" << endl;
         exit(EXIT_FAILURE);
     }
 
     try {
-        backWarpModel = torch::jit::load("NAME OF SAVED BACKWARP MODEL");
+        backWarpModel = torch::jit::load(BACKWARP_MODEL_PATH);
     } catch (const c10::Error& e) {
         cerr << "Error loading BackWarp model\n" << endl;
         exit(EXIT_FAILURE);
@@ -71,11 +69,6 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     torch::DeviceType device = torch::kCUDA;
     interpolationModel.to(device);
     backWarpModel.to(device);
-
-    // TODO: load trained model params
-    //for (auto param : interpolationModel.parameters()) {
-        // set require grad false
-    //}
 }
 
 /**
@@ -87,11 +80,6 @@ void SlowMotionService::startService() {
     torch::DeviceType device = torch::kCUDA;
 
     while (firstFrameIndex < lastFrameIndex) {
-        // TODO: remove after all .flo files are imported
-        if (firstFrameIndex == 900) {
-            break;
-        }
-
         // send request with frame number
         s_send(flowRequester, to_string(firstFrameIndex));
         
