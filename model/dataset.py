@@ -23,7 +23,20 @@ def generateClips(videos, indices, outputPath):
 
             clipCounter += 1
 
+        # remove the directory and remaining frames
+        rmtree(videoPath)
+
 def main():
+    # remove existing training data prior to starting
+    try:
+        rmtree(TRAINING_TRAIN_PATH)
+    except:
+        pass
+    try:
+        rmtree(TRAINING_VALIDATE_PATH)
+    except:
+        pass
+
     # get list of dataset videos
     videos = [video for video in os.listdir(VIDEO_DATASET_PATH) if 
         video.lower().endswith('.mov') or
@@ -56,6 +69,9 @@ def main():
     # generate clips of 12 frames for both training and test sets
     generateClips(videos, trainSampleIndices, TRAINING_TRAIN_PATH)
     generateClips(videos, testSampleIndices, TRAINING_TEST_PATH)
+
+    # remove temporary directory
+    os.rmdir(TRAINING_TMP_PATH)
     
     # sample 100 clips for validation set
     os.mkdir(TRAINING_VALIDATE_PATH)
@@ -63,10 +79,14 @@ def main():
     for index in indices:
         move("{}/{}".format(TRAINING_TEST_PATH, index), "{}/{}".format(TRAINING_VALIDATE_PATH, index))
 
-    # create directory for training checkpoints
-    os.mkdir(TRAINING_CHECKPOINT_PATH)
+    # discard the rest of the test directory
+    rmtree(TRAINING_TEST_PATH)
 
-    # TODO: remove unnecessary data
+    # create directory for training checkpoints
+    try:
+        os.mkdir(TRAINING_CHECKPOINT_PATH)
+    except:
+        print ('Checkpoint directory already exists... continuing')
 
 if __name__ == "__main__":
     main()
