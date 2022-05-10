@@ -10,27 +10,34 @@ from config import *
 from model import UNet, BackWarp
 
 class DataSet(torch.utils.data.Dataset):
-    def __init__(self, root, transform = None, dim = (640, 360), randomCropSize = (352, 352), train = True):
+    def __init__(self, root, dim = (640, 360), randomCropSize = (352, 352), train = True):
         framesPath = []
+        flowVectorsPath = []
 
         for i, folder in enumerate(os.listdir(root)):
             clipsFolderPath = os.path.join(root, folder)
 
             if os.path.isdir(clipsFolderPath):
                 framesPath.append([])
+                flowVectorsPath.append([])
                 for image in sorted(os.listdir(clipsFolderPath)):
-                    framesPath[i].append(os.path.join(clipsFolderPath, image))
+                    if image[-4:] == '.yuv':
+                        framesPath[i].append(os.path.join(clipsFolderPath, image))
+                    elif image[-4:] == '.flo':
+                        flowVectorsPath[i].append(os.path.join(clipsFolderPath, image))
+                if len(flowVectorsPath[i]) == 0:
+                    raise(RuntimeError("Flow vectors not generated for a folder in: " + root + "\n"))
         
         if len(framesPath) == 0:
             raise(RuntimeError("Found 0 files in clip folders of: " + root + "\n"))
                 
         self.root = root
-        self.transform = transform
         self.randomCropSize = randomCropSize
         self.cropX0 = dim[0] - randomCropSize[0]
         self.cropY0 = dim[1] - randomCropSize[1]
         self.train = train
         self.framesPath = framesPath
+        self.flowVectorsPath = flowVectorsPath
 
     def __getitem__(self, index):
         sample = []
@@ -64,17 +71,14 @@ class DataSet(torch.utils.data.Dataset):
                 flipped_img = cropped_img.transpose(Image.FLIP_LEFT_RIGHT) if randomFrameFlip else cropped_img
                 image = flipped_img.convert('YCbCr')
 
-            if self.transform is not None:
-                image = self.transform(image)
-
             sample.append(image)
 
-        # TODO: generate F_0_1 and F_1_0
-        # F_0_1 = ...(sample[0], sample[-1])
-        # F_1_0 = ...(sample[0], sample[-1])
-        # TODO: crop, flip, transform
-        # sample.append(F_0_1)
-        # sample.append(F_1_0)
+        # generate F_0_1 and F_1_0
+        F_0_1 = self.flowVectorsPath[index][2 * firstFrame]
+        F_1_0 = self.flowVectorsPath[index][2 * firstFrame + 1]
+        # TODO: crop and flip flow vectors
+
+        # TODO: append F_0_1 and F_1_0 to the end of sample
             
         return sample, returnIndex
 
@@ -174,16 +178,10 @@ def train():
     # array of timesteps for intermediate frame calculations
     t = np.linspace(0.125, 0.875, 7)
 
-    # channel wise mean calculated on adobe240-fps training dataset
-    mean = [0.429, 0.431, 0.397]
-    std = [1, 1, 1]
-    normalize = torchvision.transforms.Normalize(mean = mean, std = std)
-    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), normalize])
-
     # load train and validation sets
-    trainSet = DataSet(root = TRAINING_TRAIN_PATH, transform = transform, train = True)
+    trainSet = DataSet(root = TRAINING_TRAIN_PATH, train = True)
     trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = TRAIN_BATCH_SIZE, shuffle = True)
-    validationSet = DataSet(root = TRAINING_VALIDATE_PATH, transform = transform, randomCropSize = (640, 352), train = False)
+    validationSet = DataSet(root = TRAINING_VALIDATE_PATH, randomCropSize = (640, 352), train = False)
     validationLoader = torch.utils.data.DataLoader(validationSet, batch_size = VALIDATION_BATCH_SIZE, shuffle = False)
 
     # loss and Optimizer
