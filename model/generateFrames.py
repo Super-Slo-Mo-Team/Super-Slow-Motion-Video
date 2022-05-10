@@ -49,6 +49,8 @@ def main():
         videoName = video[:-4]
         framePath = os.path.join(TRAINING_TMP_PATH, videoName)
 
+        # TODO: change frame generation to be .yuv format
+
         os.mkdir(framePath)
         retval = os.system(
             'ffmpeg -i {} -vf scale={}:{} -vsync 0 -qscale:v 2 {}/%04d.jpg'.format(
