@@ -10,7 +10,7 @@ from config import *
 from model import UNet, BackWarp
 
 class DataSet(torch.utils.data.Dataset):
-    def __init__(self, root, dim = (640, 360), randomCropSize = (352, 352), train = True):
+    def __init__(self, root, train, dim = (640, 360), randomCropSize = (352, 352)):
         framesPath = []
         flowVectorsPath = []
 
@@ -25,8 +25,10 @@ class DataSet(torch.utils.data.Dataset):
                         framesPath[i].append(os.path.join(clipsFolderPath, image))
                     elif image[-4:] == '.flo':
                         flowVectorsPath[i].append(os.path.join(clipsFolderPath, image))
+                    else:
+                        raise(RuntimeError('Extra files in: ' + clipsFolderPath + '\n'))
                 if len(flowVectorsPath[i]) == 0:
-                    raise(RuntimeError("Flow vectors not generated for a folder in: " + root + "\n"))
+                    raise(RuntimeError('Flow vectors not generated for a folder in: ' + clipsFolderPath + '\n'))
         
         if len(framesPath) == 0:
             raise(RuntimeError("Found 0 files in clip folders of: " + root + "\n"))
@@ -63,6 +65,8 @@ class DataSet(torch.utils.data.Dataset):
             frameRange = [0, IFrameIndex, 8]
             randomFrameFlip = 0
         
+        # TODO: test image opening because .yuvs
+
         for frameIndex in frameRange:
             image = None
             with open(self.framesPath[index][frameIndex], 'rb') as f:
@@ -73,12 +77,18 @@ class DataSet(torch.utils.data.Dataset):
 
             sample.append(image)
 
-        # generate F_0_1 and F_1_0
-        F_0_1 = self.flowVectorsPath[index][2 * firstFrame]
-        F_1_0 = self.flowVectorsPath[index][2 * firstFrame + 1]
-        # TODO: crop and flip flow vectors
+        # get corresponding F_0_1 and F_1_0 to sample frames
+        F_0_1_path = self.flowVectorsPath[index][2 * firstFrame]
+        F_1_0_path = self.flowVectorsPath[index][2 * firstFrame + 1]
 
-        # TODO: append F_0_1 and F_1_0 to the end of sample
+        # TODO: load as tensors, crop, maybe flip
+        # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
+        F_0_1 = None
+        F_1_0 = None
+
+        # append flow vectors to the end of sample
+        sample.append(F_0_1)
+        sample.append(F_1_0)
             
         return sample, returnIndex
 
@@ -108,6 +118,8 @@ def train():
     def get_lr(optimizer):
         for param_group in optimizer.param_groups:
             return param_group['lr']
+
+    # TODO: test loss function in yuv space
 
     # validation function
     def validate():
@@ -181,7 +193,7 @@ def train():
     # load train and validation sets
     trainSet = DataSet(root = TRAINING_TRAIN_PATH, train = True)
     trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = TRAIN_BATCH_SIZE, shuffle = True)
-    validationSet = DataSet(root = TRAINING_VALIDATE_PATH, randomCropSize = (640, 352), train = False)
+    validationSet = DataSet(root = TRAINING_VALIDATE_PATH, train = False, randomCropSize = (640, 352))
     validationLoader = torch.utils.data.DataLoader(validationSet, batch_size = VALIDATION_BATCH_SIZE, shuffle = False)
 
     # loss and Optimizer
@@ -202,6 +214,8 @@ def train():
     valLoss = []
     valPSNR = []
     checkpoint_counter = 0
+
+    # TODO: test loss function in yuv space
 
     # main training loop
     for epoch in range(NUM_EPOCHS):
