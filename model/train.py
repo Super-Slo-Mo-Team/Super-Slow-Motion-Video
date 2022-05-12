@@ -9,6 +9,48 @@ import datetime
 from config import *
 from model import UNet, BackWarp
 
+#pass in the path to the YUV file, and the tuple dim from the dataset class... width/height might be reversed?
+def yuvToTensor(yuvFile,dim):
+
+    #helper function to map U&V Values to the same size as the Y Tensor
+    def mapColor(colorValues, width):
+        colorTensor = torch.empty(0, dtype=torch.int8)
+        rowTensor = torch.empty(0, dtype=torch.int8)
+        for i in range(colorValues.size):
+            valueTensor = torch.full((2,2), colorValues[i], dtype=torch.int8)
+            rowTensor = torch.cat((rowTensor,valueTensor),1)
+
+            if(rowTensor.shape[1] == width):
+                colorTensor = torch.cat((colorTensor, rowTensor),0)
+                rowTensor = torch.empty(0, dtype=torch.int8)
+        
+        #unsqueeze twice for shape [1,1,height,width]
+        colorTensor.unsqueeze_(0)
+        colorTensor.unsqueeze_(0)
+
+        return colorTensor
+
+    width = dim[0]
+    height = dim[1]
+    imgSize = width * height
+
+    yValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize, offset = 0)
+    uValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize)
+    vValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize + (imgSize//4))
+    
+    yTensor = torch.from_numpy(yValues)
+    yTensor = torch.reshape(yTensor, (1,1,height,width))
+
+    uTensor = mapColor(uValues,width)
+
+    vTensor = mapColor(vValues,width)
+
+    #shape = [1,3,height,width]
+    yuvTensor = torch.cat((yTensor,uTensor,vTensor),1)
+
+
+
+
 class DataSet(torch.utils.data.Dataset):
     def __init__(self, root, train, dim = (640, 360), randomCropSize = (352, 352)):
         framesPath = []
