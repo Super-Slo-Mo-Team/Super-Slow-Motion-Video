@@ -9,29 +9,29 @@ import datetime
 from config import *
 from model import UNet, BackWarp
 
-#pass in the path to the YUV file, and the tuple dim from the dataset class... width/height might be reversed?
-def yuvToTensor(yuvFile,dim):
-
-    #helper function to map U&V Values to the same size as the Y Tensor
+# pass in the path to the YUV file
+def yuvToTensor(yuvFile):
+    # helper function to map U&V Values to the same size as the Y Tensor
     def mapColor(colorValues, width):
         colorTensor = torch.empty(0, dtype=torch.int8)
         rowTensor = torch.empty(0, dtype=torch.int8)
+
         for i in range(colorValues.size):
             valueTensor = torch.full((2,2), colorValues[i], dtype=torch.int8)
             rowTensor = torch.cat((rowTensor,valueTensor),1)
 
-            if(rowTensor.shape[1] == width):
+            if rowTensor.shape[1] == width:
                 colorTensor = torch.cat((colorTensor, rowTensor),0)
                 rowTensor = torch.empty(0, dtype=torch.int8)
         
-        #unsqueeze twice for shape [1,1,height,width]
+        # unsqueeze twice for shape [1,1,height,width]
         colorTensor.unsqueeze_(0)
         colorTensor.unsqueeze_(0)
 
         return colorTensor
 
-    width = dim[0]
-    height = dim[1]
+    width = IMAGE_DIM[0]
+    height = IMAGE_DIM[1]
     imgSize = width * height
 
     yValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize, offset = 0)
@@ -42,14 +42,11 @@ def yuvToTensor(yuvFile,dim):
     yTensor = torch.reshape(yTensor, (1,1,height,width))
 
     uTensor = mapColor(uValues,width)
-
     vTensor = mapColor(vValues,width)
 
-    #shape = [1,3,height,width]
+    # shape = [1,3,height,width]
     yuvTensor = torch.cat((yTensor,uTensor,vTensor),1)
-
-
-
+    return yuvTensor
 
 class DataSet(torch.utils.data.Dataset):
     def __init__(self, root, train):
@@ -77,10 +74,7 @@ class DataSet(torch.utils.data.Dataset):
                 
         self.root = root
         self.train = train
-        if train:
-            self.randomCropSize = TRAIN_RANDOM_CROP_SIZE
-        else:
-            self.randomCropSize = VALIDATE_RANDOM_CROP_SIZE
+        self.randomCropSize = TRAIN_RANDOM_CROP_SIZE if train else VALIDATE_RANDOM_CROP_SIZE
         self.cropX0 = IMAGE_DIM[0] - self.randomCropSize[0]
         self.cropY0 = IMAGE_DIM[1] - self.randomCropSize[1]
         self.framesPath = framesPath
@@ -126,10 +120,13 @@ class DataSet(torch.utils.data.Dataset):
         F_0_1_path = self.flowVectorsPath[index][2 * firstFrame]
         F_1_0_path = self.flowVectorsPath[index][2 * firstFrame + 1]
 
-        # TODO: load as tensors, crop, maybe flip
-        # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
-        F_0_1 = None
-        F_1_0 = None
+        # load as tensors, crop, flip
+        F_0_1 = yuvToTensor(F_0_1_path)
+        F_1_0 = yuvToTensor(F_1_0_path)
+        F_0_1 = torchvision.transforms.functional.crop(F_0_1, cropArea[1], cropArea[0], cropArea[3], cropArea[2])
+        F_1_0 = torchvision.transforms.functional.crop(F_1_0, cropArea[1], cropArea[0], cropArea[3]-cropArea[1], cropArea[2]-cropArea[0])
+        F_0_1 = torch.flip(F_0_1, [3]) if randomFrameFlip else F_0_1
+        F_1_0 = torch.flip(F_1_0, [3]) if randomFrameFlip else F_1_0
 
         # append flow vectors to the end of sample
         sample.append(F_0_1)
@@ -186,7 +183,7 @@ class TrainRoutine():
         C11 = C00 = - (1 - (TSTEPS[ind])) * (TSTEPS[ind])
         C01 = (TSTEPS[ind]) * (TSTEPS[ind])
         C10 = (1 - (TSTEPS[ind])) * (1 - (TSTEPS[ind]))
-        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(device)
+        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(self.device)
 
     # helper function to get coefficients to calculate final intermediate frame
     def getWarpCoeff(self, indices):
