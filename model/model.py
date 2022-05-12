@@ -127,21 +127,17 @@ class UNet(torch.nn.Module):
 
         return torch.cat((x1, x2), 1)
 
-# TODO: potential error : use torch grid instead for JIT compilation
-
 class BackWarp(torch.nn.Module):
-    def __init__(self, width, height, device):
+    def __init__(self, dim, device):
         super(BackWarp, self).__init__()
-        self.width = width
-        self.height = height
-        # create a grid
+        self.width = dim[0]
+        self.height = dim[1]
         
-        #require torch 1.10.2
-        xGrid, yGrid = torch.meshgrid(torch.arange(0,width,1),torch.arange(0,height,1), indexing="xy")
+        # create a grid (require torch 1.10.2)
+        xGrid, yGrid = torch.meshgrid(torch.arange(0, self.width, 1),torch.arange(0, self.height, 1), indexing="xy")
         
         xGrid.requires_grad = False
         xGrid.to(device)
-        
         yGrid.requires_grad = False
         yGrid.to(device)
         

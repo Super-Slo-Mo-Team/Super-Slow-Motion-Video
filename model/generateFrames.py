@@ -55,8 +55,8 @@ def main():
         retval = os.system(
             'ffmpeg -i {} -vf scale={}:{} -vsync 0 -qscale:v 2 {}/%04d.jpg'.format(
                 os.path.join(VIDEO_DATASET_PATH, video),
-                640,
-                360,
+                IMAGE_DIM[0],
+                IMAGE_DIM[1],
                 framePath
             )
         )
