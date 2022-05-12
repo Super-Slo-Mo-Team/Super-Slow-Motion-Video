@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import numpy as np
 from PIL import Image
 from math import log10
 import os
@@ -31,7 +30,7 @@ class DataSet(torch.utils.data.Dataset):
                     raise(RuntimeError('Flow vectors not generated for a folder in: ' + clipsFolderPath + '\n'))
         
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in clip folders of: " + root + "\n"))
+            raise(RuntimeError('Found 0 files in clip folders of: ' + root + '\n'))
                 
         self.root = root
         self.train = train
@@ -139,19 +138,19 @@ class TrainRoutine():
         self.checkpoint_counter = 0
 
     # helper function to calculate coefficients for F_t_0 and F_t_1
-    def getFlowCoeff(self, indices, device):
+    def getFlowCoeff(self, indices):
         ind = indices.detach().numpy()
         C11 = C00 = - (1 - (TSTEPS[ind])) * (TSTEPS[ind])
         C01 = (TSTEPS[ind]) * (TSTEPS[ind])
         C10 = (1 - (TSTEPS[ind])) * (1 - (TSTEPS[ind]))
-        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(device)
+        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(device)
 
     # helper function to get coefficients to calculate final intermediate frame
-    def getWarpCoeff(self, indices, device):
+    def getWarpCoeff(self, indices):
         ind = indices.detach().numpy()
         C0 = 1 - TSTEPS[ind]
         C1 = TSTEPS[ind]
-        return torch.Tensor(C0)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C1)[None, None, None, :].permute(3, 0, 1, 2).to(device)
+        return torch.Tensor(C0)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C1)[None, None, None, :].permute(3, 0, 1, 2).to(self.device)
 
     # helper function to get learning rate
     def get_lr(self, optimizer):
@@ -175,7 +174,7 @@ class TrainRoutine():
                 F_0_1 = F_0_1.to(self.device)
                 F_1_0 = F_1_0.to(self.device)
 
-                fCoeff = self.getFlowCoeff(validationFrameIndex, self.device)
+                fCoeff = self.getFlowCoeff(validationFrameIndex)
 
                 F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
                 F_t_1 = fCoeff[2] * F_0_1 + fCoeff[3] * F_1_0
@@ -193,7 +192,7 @@ class TrainRoutine():
                 g_I0_F_t_0_f = self.validationBackWarp(I0, F_t_0_f)
                 g_I1_F_t_1_f = self.validationBackWarp(I1, F_t_1_f)
                 
-                wCoeff = self.getWarpCoeff(validationFrameIndex, self.device)
+                wCoeff = self.getWarpCoeff(validationFrameIndex)
                 
                 Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
                 
@@ -240,7 +239,7 @@ class TrainRoutine():
                 
                 self.optimizer.zero_grad()
                 
-                fCoeff = self.getFlowCoeff(trainFrameIndex, self.device)
+                fCoeff = self.getFlowCoeff(trainFrameIndex)
                 
                 # calculate intermediate flows
                 F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
@@ -263,7 +262,7 @@ class TrainRoutine():
                 g_I0_F_t_0_f = self.trainBackWarp(I0, F_t_0_f)
                 g_I1_F_t_1_f = self.trainBackWarp(I1, F_t_1_f)
                 
-                wCoeff = self.getWarpCoeff(trainFrameIndex, self.device)
+                wCoeff = self.getWarpCoeff(trainFrameIndex)
                 
                 # calculate final intermediate frame 
                 Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
@@ -296,7 +295,7 @@ class TrainRoutine():
                     self.valPSNR[epoch].append(psnr)
                     self.valLoss[epoch].append(vLoss)
 
-                    print("Loss: %0.6f  Iterations: %4d/%4d  ValLoss:%0.6f  ValPSNR: %0.4f  LearningRate: %f" % (iLoss / NUM_ITERATIONS, trainIndex, len(self.trainLoader), vLoss, psnr, self.get_lr(self.optimizer)))
+                    print('Loss: %0.6f  Iterations: %4d/%4d  ValLoss:%0.6f  ValPSNR: %0.4f  LearningRate: %f' % (iLoss / NUM_ITERATIONS, trainIndex, len(self.trainLoader), vLoss, psnr, self.get_lr(self.optimizer)))
 
                     self.cLoss[epoch].append(iLoss / NUM_ITERATIONS)
                     iLoss = 0

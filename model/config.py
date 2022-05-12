@@ -11,12 +11,18 @@ TRAINING_TEST_PATH          = TRAINING_ROOT_PATH + '/test'
 TRAINING_VALIDATE_PATH      = TRAINING_ROOT_PATH + '/validate'
 TRAINING_CHECKPOINT_PATH    = 'checkpoints'
 
-# Training Macros
+# Dimensions
 
-IMAGE_DIM = (640, 360)                  # training image dimensions
+IMAGE_DIM = (640, 360)                  # dataset image dimensions
 TRAIN_RANDOM_CROP_SIZE = (352, 352)     # training random crop size
 VALIDATE_RANDOM_CROP_SIZE = (640, 352)  # validation random crop size
+
+# Misc
+
 TSTEPS = np.linspace(0.125, 0.875, 7)   # array of timesteps for intermediate frame calculations
+
+# Training Macros
+
 NUM_EPOCHS = 200                        # number of epochs to train
 TRAIN_BATCH_SIZE = 6                    # batch size for training
 VALIDATION_BATCH_SIZE = 10              # batch size for validation
