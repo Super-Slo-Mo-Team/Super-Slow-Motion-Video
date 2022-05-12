@@ -1,5 +1,6 @@
 import torch
 import torchvision
+import numpy as np
 from PIL import Image
 from math import log10
 import os
