@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import numpy as np
 from PIL import Image
 from math import log10
 import os
@@ -52,7 +51,7 @@ def yuvToTensor(yuvFile,dim):
 
 
 class DataSet(torch.utils.data.Dataset):
-    def __init__(self, root, train, dim = (640, 360), randomCropSize = (352, 352)):
+    def __init__(self, root, train):
         framesPath = []
         flowVectorsPath = []
 
@@ -73,13 +72,16 @@ class DataSet(torch.utils.data.Dataset):
                     raise(RuntimeError('Flow vectors not generated for a folder in: ' + clipsFolderPath + '\n'))
         
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in clip folders of: " + root + "\n"))
+            raise(RuntimeError('Found 0 files in clip folders of: ' + root + '\n'))
                 
         self.root = root
-        self.randomCropSize = randomCropSize
-        self.cropX0 = dim[0] - randomCropSize[0]
-        self.cropY0 = dim[1] - randomCropSize[1]
         self.train = train
+        if train:
+            self.randomCropSize = TRAIN_RANDOM_CROP_SIZE
+        else:
+            self.randomCropSize = VALIDATE_RANDOM_CROP_SIZE
+        self.cropX0 = IMAGE_DIM[0] - self.randomCropSize[0]
+        self.cropY0 = IMAGE_DIM[1] - self.randomCropSize[1]
         self.framesPath = framesPath
         self.flowVectorsPath = flowVectorsPath
 
@@ -107,7 +109,7 @@ class DataSet(torch.utils.data.Dataset):
             frameRange = [0, IFrameIndex, 8]
             randomFrameFlip = 0
         
-        # TODO: test image opening because .yuvs
+        # TODO: .yuv
 
         for frameIndex in frameRange:
             image = None
@@ -137,73 +139,109 @@ class DataSet(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.framesPath)
 
-#
-# Main training routine
-#
-def train():
+class TrainRoutine():
+    def __init__(self):
+        # initialize device
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+        # initialize interpolationModel CNN
+        self.interpolationModel = UNet()
+        self.interpolationModel.to(self.device)
+
+        # initialize backwarp function
+        self.trainBackWarp = BackWarp(TRAIN_RANDOM_CROP_SIZE, self.device)
+        self.trainBackWarp = self.trainBackWarp.to(self.device)
+        self.validationBackWarp = BackWarp(VALIDATE_RANDOM_CROP_SIZE, self.device)
+        self.validationBackWarp = self.validationBackWarp.to(self.device)
+
+        # load train and validation sets
+        trainSet = DataSet(root = TRAINING_TRAIN_PATH, train = True)
+        self.trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = TRAIN_BATCH_SIZE, shuffle = True)
+        validationSet = DataSet(root = TRAINING_VALIDATE_PATH, train = False)
+        self.validationLoader = torch.utils.data.DataLoader(validationSet, batch_size = VALIDATION_BATCH_SIZE, shuffle = False)
+
+        # loss and optimizer
+        self.L1_lossFn = torch.nn.L1Loss()
+        self.MSE_lossFn = torch.nn.MSELoss()
+        self.optimizer = torch.optim.Adam(list(self.interpolationModel.parameters()), lr = LEARNING_RATE)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones = MILESTONES, gamma = 0.1)
+
+        # initialize VGG16 model for perceptual loss
+        vgg16 = torchvision.models.vgg16(pretrained = True)
+        self.vgg16_conv_4_3 = torch.nn.Sequential(*list(vgg16.children())[0][:22])
+        self.vgg16_conv_4_3.to(self.device)
+        for param in self.vgg16_conv_4_3.parameters():
+            param.requires_grad = False
+
+        # initialize model dict
+        self.cLoss = []
+        self.valLoss = []
+        self.valPSNR = []
+        self.checkpoint_counter = 0
+
     # helper function to calculate coefficients for F_t_0 and F_t_1
-    def getFlowCoeff(indices, device):
+    def getFlowCoeff(self, indices):
         ind = indices.detach().numpy()
-        C11 = C00 = - (1 - (t[ind])) * (t[ind])
-        C01 = (t[ind]) * (t[ind])
-        C10 = (1 - (t[ind])) * (1 - (t[ind]))
-        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(device)
+        C11 = C00 = - (1 - (TSTEPS[ind])) * (TSTEPS[ind])
+        C01 = (TSTEPS[ind]) * (TSTEPS[ind])
+        C10 = (1 - (TSTEPS[ind])) * (1 - (TSTEPS[ind]))
+        return torch.Tensor(C00)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C01)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C10)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C11)[None, None, None, :].permute(3, 0, 1, 2).to(device)
 
     # helper function to get coefficients to calculate final intermediate frame
-    def getWarpCoeff(indices, device):
+    def getWarpCoeff(self, indices):
         ind = indices.detach().numpy()
-        C0 = 1 - t[ind]
-        C1 = t[ind]
-        return torch.Tensor(C0)[None, None, None, :].permute(3, 0, 1, 2).to(device), torch.Tensor(C1)[None, None, None, :].permute(3, 0, 1, 2).to(device)
+        C0 = 1 - TSTEPS[ind]
+        C1 = TSTEPS[ind]
+        return torch.Tensor(C0)[None, None, None, :].permute(3, 0, 1, 2).to(self.device), torch.Tensor(C1)[None, None, None, :].permute(3, 0, 1, 2).to(self.device)
 
     # helper function to get learning rate
-    def get_lr(optimizer):
+    def get_lr(self, optimizer):
         for param_group in optimizer.param_groups:
             return param_group['lr']
 
-    # TODO: test loss function in yuv space
-
-    # validation function
-    def validate():
+    #
+    # Validation routine
+    #
+    def validate(self):
         psnr = 0
         tloss = 0
         
         with torch.no_grad():
-            for _, (validationData, validationFrameIndex) in enumerate(validationLoader, 0):
+            for _, (validationData, validationFrameIndex) in enumerate(self.validationLoader, 0):
                 frame0, frameT, frame1, F_0_1, F_1_0 = validationData
 
-                I0 = frame0.to(device)
-                I1 = frame1.to(device)
-                IFrame = frameT.to(device)
-                F_0_1 = F_0_1.to(device)
-                F_1_0 = F_1_0.to(device)
+                I0 = frame0.to(self.device)
+                I1 = frame1.to(self.device)
+                IFrame = frameT.to(self.device)
+                F_0_1 = F_0_1.to(self.device)
+                F_1_0 = F_1_0.to(self.device)
 
-                fCoeff = getFlowCoeff(validationFrameIndex, device)
+                fCoeff = self.getFlowCoeff(validationFrameIndex)
 
                 F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
                 F_t_1 = fCoeff[2] * F_0_1 + fCoeff[3] * F_1_0
 
-                g_I0_F_t_0 = validationBackWarp(I0, F_t_0)
-                g_I1_F_t_1 = validationBackWarp(I1, F_t_1)
+                g_I0_F_t_0 = self.validationBackWarp(I0, F_t_0)
+                g_I1_F_t_1 = self.validationBackWarp(I1, F_t_1)
 
-                interpolationRes = interpolationModel(torch.cat((I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0), dim = 1))
+                interpolationRes = self.interpolationModel(torch.cat((I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0), dim = 1))
 
                 F_t_0_f = interpolationRes[:, :2, :, :] + F_t_0
                 F_t_1_f = interpolationRes[:, 2:4, :, :] + F_t_1
                 V_t_0 = interpolationRes[:, 4, :, :]
                 V_t_1 = 1 - V_t_0
                     
-                g_I0_F_t_0_f = validationBackWarp(I0, F_t_0_f)
-                g_I1_F_t_1_f = validationBackWarp(I1, F_t_1_f)
+                g_I0_F_t_0_f = self.validationBackWarp(I0, F_t_0_f)
+                g_I1_F_t_1_f = self.validationBackWarp(I1, F_t_1_f)
                 
-                wCoeff = getWarpCoeff(validationFrameIndex, device)
+                wCoeff = self.getWarpCoeff(validationFrameIndex)
                 
                 Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
                 
                 # loss
-                recnLoss = L1_lossFn(Ft_p, IFrame)
-                prcpLoss = MSE_LossFn(vgg16_conv_4_3(Ft_p), vgg16_conv_4_3(IFrame))
-                warpLoss = L1_lossFn(g_I0_F_t_0, IFrame) + L1_lossFn(g_I1_F_t_1, IFrame) + L1_lossFn(validationBackWarp(I0, F_1_0), I1) + L1_lossFn(validationBackWarp(I1, F_0_1), I0)
+                recnLoss = self.L1_lossFn(Ft_p, IFrame)
+                prcpLoss = self.MSE_lossFn(self.vgg16_conv_4_3(Ft_p), self.vgg16_conv_4_3(IFrame))
+                warpLoss = self.L1_lossFn(g_I0_F_t_0, IFrame) + self.L1_lossFn(g_I1_F_t_1, IFrame) + self.L1_lossFn(self.validationBackWarp(I0, F_1_0), I1) + self.L1_lossFn(self.validationBackWarp(I1, F_0_1), I0)
                 loss_smooth_1_0 = torch.mean(torch.abs(F_1_0[:, :, :, :-1] - F_1_0[:, :, :, 1:])) + torch.mean(torch.abs(F_1_0[:, :, :-1, :] - F_1_0[:, :, 1:, :]))
                 loss_smooth_0_1 = torch.mean(torch.abs(F_0_1[:, :, :, :-1] - F_0_1[:, :, :, 1:])) + torch.mean(torch.abs(F_0_1[:, :, :-1, :] - F_0_1[:, :, 1:, :]))
                 loss_smooth = loss_smooth_1_0 + loss_smooth_0_1
@@ -211,149 +249,113 @@ def train():
                 tloss += loss.item()
 
                 # psnr
-                MSE_val = MSE_LossFn(Ft_p, IFrame)
+                MSE_val = self.MSE_lossFn(Ft_p, IFrame)
                 psnr += (10 * log10(1 / MSE_val.item()))
+
+        return (psnr / len(self.validationLoader)), (tloss / len(self.validationLoader))
+
+    #
+    # Training routine
+    #
+    def train(self):
+        for epoch in range(NUM_EPOCHS):
+            print ('Epoch: ', epoch)
                 
-        return (psnr / len(validationLoader)), (tloss / len(validationLoader))
-
-    # initialize device
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # initialize interpolationModel CNN
-    interpolationModel = UNet()
-    interpolationModel.to(device)
-
-    # initialize backwarp function
-    trainBackWarp = BackWarp(352, 352, device)
-    validationBackWarp = BackWarp(640, 352, device)
-    trainBackWarp = trainBackWarp.to(device)
-    validationBackWarp = validationBackWarp.to(device)
-
-    # array of timesteps for intermediate frame calculations
-    t = np.linspace(0.125, 0.875, 7)
-
-    # load train and validation sets
-    trainSet = DataSet(root = TRAINING_TRAIN_PATH, train = True)
-    trainLoader = torch.utils.data.DataLoader(trainSet, batch_size = TRAIN_BATCH_SIZE, shuffle = True)
-    validationSet = DataSet(root = TRAINING_VALIDATE_PATH, train = False, randomCropSize = (640, 352))
-    validationLoader = torch.utils.data.DataLoader(validationSet, batch_size = VALIDATION_BATCH_SIZE, shuffle = False)
-
-    # loss and Optimizer
-    L1_lossFn = torch.nn.L1Loss()
-    MSE_LossFn = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(list(interpolationModel.parameters()), lr = LEARNING_RATE)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = MILESTONES, gamma = 0.1)
-
-    # initialize VGG16 model for perceptual loss
-    vgg16 = torchvision.models.vgg16(pretrained = True)
-    vgg16_conv_4_3 = torch.nn.Sequential(*list(vgg16.children())[0][:22])
-    vgg16_conv_4_3.to(device)
-    for param in vgg16_conv_4_3.parameters():
-        param.requires_grad = False
-
-    # initialize model dict
-    cLoss = []
-    valLoss = []
-    valPSNR = []
-    checkpoint_counter = 0
-
-    # TODO: test loss function in yuv space
-
-    # main training loop
-    for epoch in range(NUM_EPOCHS):
-        print ("Epoch: ", epoch)
+            # append and reset
+            self.cLoss.append([])
+            self.valLoss.append([])
+            self.valPSNR.append([])
+            iLoss = 0
             
-        # append and reset
-        cLoss.append([])
-        valLoss.append([])
-        valPSNR.append([])
-        iLoss = 0
-        
-        # Increment scheduler count    
-        scheduler.step()
-        
-        for trainIndex, (trainData, trainFrameIndex) in enumerate(trainLoader, 0):
-            # get the input and the target from the training set
-            frame0, frameT, frame1, F_0_1, F_1_0 = trainData
+            # increment scheduler count    
+            self.scheduler.step()
             
-            I0 = frame0.to(device)
-            I1 = frame1.to(device)
-            IFrame = frameT.to(device)
-            F_0_1 = F_0_1.to(device)
-            F_1_0 = F_1_0.to(device)
-            
-            optimizer.zero_grad()
-            
-            fCoeff = getFlowCoeff(trainFrameIndex, device)
-            
-            # calculate intermediate flows
-            F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
-            F_t_1 = fCoeff[2] * F_0_1 + fCoeff[3] * F_1_0
-            
-            # get intermediate frames from the intermediate flows
-            g_I0_F_t_0 = trainBackWarp(I0, F_t_0)
-            g_I1_F_t_1 = trainBackWarp(I1, F_t_1)
-            
-            # calculate optical flow residuals and visibility maps
-            interpolationRes = interpolationModel(torch.cat((I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0), dim = 1))
-            
-            # extract optical flow residuals and visibility maps
-            F_t_0_f = interpolationRes[:, :2, :, :] + F_t_0
-            F_t_1_f = interpolationRes[:, 2:4, :, :] + F_t_1
-            V_t_0 = interpolationRes[:, 4, :, :]
-            V_t_1 = 1 - V_t_0
-            
-            # get intermediate frames from the intermediate flows
-            g_I0_F_t_0_f = trainBackWarp(I0, F_t_0_f)
-            g_I1_F_t_1_f = trainBackWarp(I1, F_t_1_f)
-            
-            wCoeff = getWarpCoeff(trainFrameIndex, device)
-            
-            # calculate final intermediate frame 
-            Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
-            
-            # loss
-            recnLoss = L1_lossFn(Ft_p, IFrame)
-            prcpLoss = MSE_LossFn(vgg16_conv_4_3(Ft_p), vgg16_conv_4_3(IFrame))
-            warpLoss = L1_lossFn(g_I0_F_t_0, IFrame) + L1_lossFn(g_I1_F_t_1, IFrame) + L1_lossFn(trainBackWarp(I0, F_1_0), I1) + L1_lossFn(trainBackWarp(I1, F_0_1), I0)
-            loss_smooth_1_0 = torch.mean(torch.abs(F_1_0[:, :, :, :-1] - F_1_0[:, :, :, 1:])) + torch.mean(torch.abs(F_1_0[:, :, :-1, :] - F_1_0[:, :, 1:, :]))
-            loss_smooth_0_1 = torch.mean(torch.abs(F_0_1[:, :, :, :-1] - F_0_1[:, :, :, 1:])) + torch.mean(torch.abs(F_0_1[:, :, :-1, :] - F_0_1[:, :, 1:, :]))
-            loss_smooth = loss_smooth_1_0 + loss_smooth_0_1
-            loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
+            for trainIndex, (trainData, trainFrameIndex) in enumerate(self.trainLoader, 0):
+                frame0, frameT, frame1, F_0_1, F_1_0 = trainData
+                
+                I0 = frame0.to(self.device)
+                I1 = frame1.to(self.device)
+                IFrame = frameT.to(self.device)
+                F_0_1 = F_0_1.to(self.device)
+                F_1_0 = F_1_0.to(self.device)
+                
+                self.optimizer.zero_grad()
+                
+                fCoeff = self.getFlowCoeff(trainFrameIndex)
+                
+                # calculate intermediate flows
+                F_t_0 = fCoeff[0] * F_0_1 + fCoeff[1] * F_1_0
+                F_t_1 = fCoeff[2] * F_0_1 + fCoeff[3] * F_1_0
+                
+                # get intermediate frames from the intermediate flows
+                g_I0_F_t_0 = self.trainBackWarp(I0, F_t_0)
+                g_I1_F_t_1 = self.trainBackWarp(I1, F_t_1)
+                
+                # calculate optical flow residuals and visibility maps
+                interpolationRes = self.interpolationModel(torch.cat((I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0), dim = 1))
+                
+                # extract optical flow residuals and visibility maps
+                F_t_0_f = interpolationRes[:, :2, :, :] + F_t_0
+                F_t_1_f = interpolationRes[:, 2:4, :, :] + F_t_1
+                V_t_0 = interpolationRes[:, 4, :, :]
+                V_t_1 = 1 - V_t_0
+                
+                # get intermediate frames from the intermediate flows
+                g_I0_F_t_0_f = self.trainBackWarp(I0, F_t_0_f)
+                g_I1_F_t_1_f = self.trainBackWarp(I1, F_t_1_f)
+                
+                wCoeff = self.getWarpCoeff(trainFrameIndex)
+                
+                # calculate final intermediate frame 
+                Ft_p = (wCoeff[0] * V_t_0 * g_I0_F_t_0_f + wCoeff[1] * V_t_1 * g_I1_F_t_1_f) / (wCoeff[0] * V_t_0 + wCoeff[1] * V_t_1)
+                
+                # loss
+                recnLoss = self.L1_lossFn(Ft_p, IFrame)
+                prcpLoss = self.MSE_lossFn(self.vgg16_conv_4_3(Ft_p), self.vgg16_conv_4_3(IFrame))
+                warpLoss = self.L1_lossFn(g_I0_F_t_0, IFrame) + self.L1_lossFn(g_I1_F_t_1, IFrame) + self.L1_lossFn(self.trainBackWarp(I0, F_1_0), I1) + self.L1_lossFn(self.trainBackWarp(I1, F_0_1), I0)
+                
+                # TODO: is smoothness loss necessary?
+                
+                # loss_smooth_1_0 = torch.mean(torch.abs(F_1_0[:, :, :, :-1] - F_1_0[:, :, :, 1:])) + torch.mean(torch.abs(F_1_0[:, :, :-1, :] - F_1_0[:, :, 1:, :]))
+                # loss_smooth_0_1 = torch.mean(torch.abs(F_0_1[:, :, :, :-1] - F_0_1[:, :, :, 1:])) + torch.mean(torch.abs(F_0_1[:, :, :-1, :] - F_0_1[:, :, 1:, :]))
+                # loss_smooth = loss_smooth_1_0 + loss_smooth_0_1
+                
+                # TODO: change coefficients because yuv not rgb
 
-            # backpropagate
-            loss.backward()
-            optimizer.step()
-            iLoss += loss.item()
+                # loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
+                loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss
 
-            # validation and progress every 100 iterations
-            if ((trainIndex % NUM_ITERATIONS) == NUM_ITERATIONS - 1):
-                psnr, vLoss = validate()
+                # backpropagate
+                loss.backward()
+                self.optimizer.step()
+                iLoss += loss.item()
 
-                valPSNR[epoch].append(psnr)
-                valLoss[epoch].append(vLoss)
+                # validation and progress every 100 iterations
+                if ((trainIndex % NUM_ITERATIONS) == NUM_ITERATIONS - 1):
+                    psnr, vLoss = self.validate()
 
-                print("Loss: %0.6f  Iterations: %4d/%4d  ValLoss:%0.6f  ValPSNR: %0.4f  LearningRate: %f" % (iLoss / NUM_ITERATIONS, trainIndex, len(trainLoader), vLoss, psnr, get_lr(optimizer)))
+                    self.valPSNR[epoch].append(psnr)
+                    self.valLoss[epoch].append(vLoss)
 
-                cLoss[epoch].append(iLoss / NUM_ITERATIONS)
-                iLoss = 0
+                    print('Loss: %0.6f  Iterations: %4d/%4d  ValLoss:%0.6f  ValPSNR: %0.4f  LearningRate: %f' % (iLoss / NUM_ITERATIONS, trainIndex, len(self.trainLoader), vLoss, psnr, self.get_lr(self.optimizer)))
 
-        # Create checkpoint every CHECKPOINT_EPOCH
-        if ((epoch % CHECKPOINT_EPOCH) == CHECKPOINT_EPOCH - 1):
-            interpolationDict = {
-                'Detail' : '',
-                'epoch' : epoch,
-                'timestamp' : datetime.datetime.now(),
-                'trainBatchSz' : TRAIN_BATCH_SIZE,
-                'validationBatchSz' : VALIDATION_BATCH_SIZE,
-                'learningRate' : get_lr(optimizer),
-                'loss' : cLoss,
-                'valLoss' : valLoss,
-                'valPSNR' : valPSNR,
-                'state_dict' : interpolationModel.state_dict()
-            }
+                    self.cLoss[epoch].append(iLoss / NUM_ITERATIONS)
+                    iLoss = 0
 
-            torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(checkpoint_counter) + '.ckpt')
-            checkpoint_counter += 1
+            # Create checkpoint every CHECKPOINT_EPOCH
+            if ((epoch % CHECKPOINT_EPOCH) == CHECKPOINT_EPOCH - 1):
+                interpolationDict = {
+                    'Detail' : '',
+                    'epoch' : epoch,
+                    'timestamp' : datetime.datetime.now(),
+                    'trainBatchSz' : TRAIN_BATCH_SIZE,
+                    'validationBatchSz' : VALIDATION_BATCH_SIZE,
+                    'learningRate' : self.get_lr(self.optimizer),
+                    'loss' : self.cLoss,
+                    'valLoss' : self.valLoss,
+                    'valPSNR' : self.valPSNR,
+                    'state_dict' : self.interpolationModel.state_dict()
+                }
 
-train()
+                torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(checkpoint_counter) + '.ckpt')
+                checkpoint_counter += 1
