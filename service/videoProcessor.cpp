@@ -279,7 +279,7 @@ vector<int> VideoProcessor::ReadAllBytes(string filename)
  * @param yT Y Tensor
  */
 void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT){
-    int array[values.size()];
+    int* array = new int[values.size()];
     std::copy(values.begin(), values.end(), array);
     torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, torch::kInt);
     *yT = torch::cat({*yT, yTensor},0);
