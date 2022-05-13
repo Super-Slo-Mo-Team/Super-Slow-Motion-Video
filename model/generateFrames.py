@@ -1,3 +1,4 @@
+import cv2
 from shutil import move, rmtree
 import os
 import random
@@ -47,16 +48,16 @@ def main():
     os.mkdir(TRAINING_TMP_PATH)
     for video in videos:
         videoName = video[:-4]
+        videoFps = int(cv2.VideoCapture(os.path.join(VIDEO_DATASET_PATH, video)).get(cv2.CAP_PROP_FPS))
         framePath = os.path.join(TRAINING_TMP_PATH, videoName)
-
-        # TODO: change frame generation to be .yuv format
-
         os.mkdir(framePath)
+
         retval = os.system(
-            'ffmpeg -i {} -vf scale={}:{} -vsync 0 -qscale:v 2 {}/%04d.jpg'.format(
+            "ffmpeg -i {} -vf 'scale={}:{},fps={}' -qscale:v 2 {}/%04d.jpg".format(
                 os.path.join(VIDEO_DATASET_PATH, video),
                 IMAGE_DIM[0],
                 IMAGE_DIM[1],
+                videoFps,
                 framePath
             )
         )
