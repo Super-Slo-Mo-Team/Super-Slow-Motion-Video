@@ -1,13 +1,16 @@
 import torch
 import torchvision
 import numpy as np
-from PIL import Image
 from math import log10
 import os
 import random
 import datetime
 from config import *
 from model import UNet, BackWarp
+
+# TODO: write
+def floToTensor(floFile):
+    return
 
 # pass in the path to the YUV file
 def yuvToTensor(yuvFile):
@@ -87,7 +90,7 @@ class DataSet(torch.utils.data.Dataset):
             firstFrame = random.randint(0, 3)
             cropX = random.randint(0, self.cropX0)
             cropY = random.randint(0, self.cropY0)
-            cropArea = (cropX, cropY, cropX + self.randomCropSize[0], cropY + self.randomCropSize[1])
+            cropArea = (cropY, cropX, self.randomCropSize[1], self.randomCropSize[0])
             IFrameIndex = random.randint(firstFrame + 1, firstFrame + 7)
             if (random.randint(0, 1)):
                 frameRange = [firstFrame, IFrameIndex, firstFrame + 8]
@@ -98,33 +101,27 @@ class DataSet(torch.utils.data.Dataset):
             randomFrameFlip = random.randint(0, 1)
         else:
             firstFrame = 0
-            cropArea = (0, 0, self.randomCropSize[0], self.randomCropSize[1])
+            cropArea = (0, 0, self.randomCropSize[1], self.randomCropSize[0])
             IFrameIndex = ((index) % 7  + 1)
             returnIndex = IFrameIndex - 1
             frameRange = [0, IFrameIndex, 8]
             randomFrameFlip = 0
         
-        # TODO: .yuv
-
         for frameIndex in frameRange:
-            image = None
-            with open(self.framesPath[index][frameIndex], 'rb') as f:
-                img = Image.open(f)
-                cropped_img = img.crop(cropArea) if (cropArea != None) else img
-                flipped_img = cropped_img.transpose(Image.FLIP_LEFT_RIGHT) if randomFrameFlip else cropped_img
-                image = flipped_img.convert('YCbCr')
-
-            sample.append(image)
+            img = yuvToTensor(self.framesPath[index][frameIndex])
+            img = torchvision.transforms.functional.crop(img, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
+            img = torch.flip(img, [3]) if randomFrameFlip else img
+            sample.append(img)
 
         # get corresponding F_0_1 and F_1_0 to sample frames
         F_0_1_path = self.flowVectorsPath[index][2 * firstFrame]
         F_1_0_path = self.flowVectorsPath[index][2 * firstFrame + 1]
 
         # load as tensors, crop, flip
-        F_0_1 = yuvToTensor(F_0_1_path)
-        F_1_0 = yuvToTensor(F_1_0_path)
-        F_0_1 = torchvision.transforms.functional.crop(F_0_1, cropArea[1], cropArea[0], cropArea[3], cropArea[2])
-        F_1_0 = torchvision.transforms.functional.crop(F_1_0, cropArea[1], cropArea[0], cropArea[3]-cropArea[1], cropArea[2]-cropArea[0])
+        F_0_1 = floToTensor(F_0_1_path)
+        F_1_0 = floToTensor(F_1_0_path)
+        F_0_1 = torchvision.transforms.functional.crop(F_0_1, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
+        F_1_0 = torchvision.transforms.functional.crop(F_1_0, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
         F_0_1 = torch.flip(F_0_1, [3]) if randomFrameFlip else F_0_1
         F_1_0 = torch.flip(F_1_0, [3]) if randomFrameFlip else F_1_0
 
