@@ -146,7 +146,7 @@ class BackWarp(torch.nn.Module):
         self.xGrid = torch.clone(xGrid)
         self.yGrid = torch.clone(yGrid)
 
-    def forward(self, F_t, yuvFrame):
+    def forward(self, frame, F_t):
         # get xFlow and yFlow tensors
         xFlow_t = F_t[:, 0, :, :]
         yFlow_t = F_t[:, 1, :, :]
@@ -160,7 +160,7 @@ class BackWarp(torch.nn.Module):
         yGridFlow = 2 * (yGridFlow / self.height - 0.5)
 
         # stack and bilinear interpolation
-        yuvFrameGrid = torch.stack((xGridFlow, yGridFlow), dim = 3)
-        yuvFrame = torch.nn.functional.grid_sample(yuvFrame, yuvFrameGrid)
+        frameGrid = torch.stack((xGridFlow, yGridFlow), dim = 3)
+        frame = torch.nn.functional.grid_sample(frame, frameGrid)
 
-        return yuvFrame
+        return frame
