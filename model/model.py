@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from config import *
 
 class UNet(torch.nn.Module):
@@ -28,17 +27,19 @@ class UNet(torch.nn.Module):
         self.c11 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c12 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
 
+        # TODO: do we have to acommodate skip connections? c14, 16, 18, 20, and 22 would do input /= 2
+
         ### Decoder Layers ###
         self.c13 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
-        self.c14 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
+        self.c14 = torch.nn.Conv2d(1024, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c15 = torch.nn.Conv2d(512, 256, kernel_size = 3, stride = 1, padding = 1, bias = False)
-        self.c16 = torch.nn.Conv2d(256, 256, kernel_size = 3, stride = 1, padding = 1, bias = False)
+        self.c16 = torch.nn.Conv2d(512, 256, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c17 = torch.nn.Conv2d(256, 128, kernel_size = 3, stride = 1, padding = 1, bias = False)
-        self.c18 = torch.nn.Conv2d(128, 128, kernel_size = 3, stride = 1, padding = 1, bias = False)
+        self.c18 = torch.nn.Conv2d(256, 128, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c19 = torch.nn.Conv2d(128, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
-        self.c20 = torch.nn.Conv2d(64, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
+        self.c20 = torch.nn.Conv2d(128, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c21 = torch.nn.Conv2d(64, 32, kernel_size = 3, stride = 1, padding = 1, bias = False)
-        self.c22 = torch.nn.Conv2d(32, 32, kernel_size = 3, stride = 1, padding = 1, bias = False)
+        self.c22 = torch.nn.Conv2d(64, 32, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c23 = torch.nn.Conv2d(32, 5, kernel_size = 3, stride = 1, padding = 1, bias = False)
 
     def forward(self, x):
@@ -120,10 +121,11 @@ class UNet(torch.nn.Module):
         x = self.c22(x)
         x = self.leaky_relu(x)
 
-        x = self.c23(x)
+        # TODO: check order of leaky_relu and sigmoid
 
+        x = self.c23(x)
         x1 = self.leaky_relu(x[:, :4, :, :])
-        x2 = self.sigmoid(x[:, 4, :, :])
+        x2 = self.sigmoid(torch.unsqueeze(x[:, 4, :, :], 1))
 
         return torch.cat((x1, x2), 1)
 
@@ -137,8 +139,8 @@ class BackWarp(torch.nn.Module):
         xGrid, yGrid = torch.meshgrid(torch.arange(0, self.width, 1),torch.arange(0, self.height, 1), indexing="xy")
         
         xGrid.requires_grad = False
-        xGrid.to(device)
         yGrid.requires_grad = False
+        xGrid.to(device)
         yGrid.to(device)
         
         self.xGrid = torch.clone(xGrid)
@@ -148,13 +150,17 @@ class BackWarp(torch.nn.Module):
         # get xFlow and yFlow tensors
         xFlow_t = F_t[:, 0, :, :]
         yFlow_t = F_t[:, 1, :, :]
+
         # calculate xGridFlow and yGridFlow
         xGridFlow = self.xGrid.unsqueeze(0).expand_as(xFlow_t).float() + xFlow_t
         yGridFlow = self.yGrid.unsqueeze(0).expand_as(yFlow_t).float() + yFlow_t
+
         # normalize
         xGridFlow = 2 * (xGridFlow / self.width - 0.5)
         yGridFlow = 2 * (yGridFlow / self.height - 0.5)
+
         # stack and bilinear interpolation
         yuvFrameGrid = torch.stack((xGridFlow, yGridFlow), dim = 3)
         yuvFrame = torch.nn.functional.grid_sample(yuvFrame, yuvFrameGrid)
+
         return yuvFrame
