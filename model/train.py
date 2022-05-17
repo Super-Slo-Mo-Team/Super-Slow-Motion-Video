@@ -237,10 +237,7 @@ class TrainRoutine():
                 recnLoss = self.L1_lossFn(Ft_p, IFrame)
                 prcpLoss = self.MSE_lossFn(self.vgg16_conv_4_3(Ft_p), self.vgg16_conv_4_3(IFrame))
                 warpLoss = self.L1_lossFn(g_I0_F_t_0, IFrame) + self.L1_lossFn(g_I1_F_t_1, IFrame) + self.L1_lossFn(self.validationBackWarp(I0, F_1_0), I1) + self.L1_lossFn(self.validationBackWarp(I1, F_0_1), I0)
-                loss_smooth_1_0 = torch.mean(torch.abs(F_1_0[:, :, :, :-1] - F_1_0[:, :, :, 1:])) + torch.mean(torch.abs(F_1_0[:, :, :-1, :] - F_1_0[:, :, 1:, :]))
-                loss_smooth_0_1 = torch.mean(torch.abs(F_0_1[:, :, :, :-1] - F_0_1[:, :, :, 1:])) + torch.mean(torch.abs(F_0_1[:, :, :-1, :] - F_0_1[:, :, 1:, :]))
-                loss_smooth = loss_smooth_1_0 + loss_smooth_0_1
-                loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
+                loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss
                 tloss += loss.item()
 
                 # psnr
@@ -308,16 +305,7 @@ class TrainRoutine():
                 recnLoss = self.L1_lossFn(Ft_p, IFrame)
                 prcpLoss = self.MSE_lossFn(self.vgg16_conv_4_3(Ft_p), self.vgg16_conv_4_3(IFrame))
                 warpLoss = self.L1_lossFn(g_I0_F_t_0, IFrame) + self.L1_lossFn(g_I1_F_t_1, IFrame) + self.L1_lossFn(self.trainBackWarp(I0, F_1_0), I1) + self.L1_lossFn(self.trainBackWarp(I1, F_0_1), I0)
-                
-                # TODO: is smoothness loss necessary?
-                
-                # loss_smooth_1_0 = torch.mean(torch.abs(F_1_0[:, :, :, :-1] - F_1_0[:, :, :, 1:])) + torch.mean(torch.abs(F_1_0[:, :, :-1, :] - F_1_0[:, :, 1:, :]))
-                # loss_smooth_0_1 = torch.mean(torch.abs(F_0_1[:, :, :, :-1] - F_0_1[:, :, :, 1:])) + torch.mean(torch.abs(F_0_1[:, :, :-1, :] - F_0_1[:, :, 1:, :]))
-                # loss_smooth = loss_smooth_1_0 + loss_smooth_0_1
-                
-                # TODO: change coefficients because yuv not rgb
-
-                # loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
+                # TODO: divide each coefficient by 255 I think
                 loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss
 
                 # backpropagate
