@@ -62,7 +62,6 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     try {
         stringstream command;
         command << "python3 " << MODEL_SCRIPT << " --model BackWarp --width " << videoProcessor->getVideoWidth() << " --height " << videoProcessor->getVideoHeight();
-        cout << command.str() << endl;
         system(command.str().c_str());
         backWarpModel = torch::jit::load(BACKWARP_MODEL_PATH);
     } catch (const c10::Error& e) {
@@ -107,14 +106,14 @@ void SlowMotionService::startService() {
             {
                 torch::from_blob(bufferFrame.getXFlowFor(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()}),
                 torch::from_blob(bufferFrame.getYFlowFor(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
-            }, 
+            },
         1);
 
         torch::Tensor F_1_0 = torch::cat(
             {
                 torch::from_blob(bufferFrame.getXFlowBack(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()}),
                 torch::from_blob(bufferFrame.getYFlowBack(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
-            }, 
+            },
         1);
         
         F_0_1.to(device);
