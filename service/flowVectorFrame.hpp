@@ -13,38 +13,52 @@ class FlowVectorFrame {
     private:
         friend class boost::serialization::access;
         int frameIndex;
-        int numVecs;
         int width;
         int height;
-        float* xFlow;
-        float* yFlow;
-        void setup(int numVecs);
+        int numVecs;
+        float* xFlowFor;
+        float* yFlowFor;
+        float* xFlowBack;
+        float* yFlowBack;
+        void setup();
         template<class Archive>
         void serialize(Archive &ar, const unsigned int version) {
             ar & frameIndex;
             ar & width;
             ar & height;
             if (Archive::is_loading::value) {
-                xFlow = new float[width * height];
+                xFlowFor = new float[width * height];
             }
-            ar & boost::serialization::make_array<float>(xFlow, width * height);
+            ar & boost::serialization::make_array<float>(xFlowFor, width * height);
             if (Archive::is_loading::value) {
-                yFlow = new float[width * height];
+                yFlowFor = new float[width * height];
             }
-            ar & boost::serialization::make_array<float>(yFlow, width * height);
+            ar & boost::serialization::make_array<float>(yFlowFor, width * height);
+            if (Archive::is_loading::value) {
+                xFlowBack = new float[width * height];
+            }
+            ar & boost::serialization::make_array<float>(xFlowBack, width * height);
+            if (Archive::is_loading::value) {
+                yFlowBack = new float[width * height];
+            }
+            ar & boost::serialization::make_array<float>(yFlowBack, width * height);
         };
     public:
         FlowVectorFrame() {};
         ~FlowVectorFrame() {
-            free(xFlow);
-            free(yFlow);
+            free(xFlowFor);
+            free(yFlowFor);
+            free(xFlowBack);
+            free(yFlowBack);
         };
-        void readFloFile(istream& file, int frameIndex);
+        void readFloFile(istream& file1, istream& file2, int frameIndex);
         int getFrameIndex();
         int getWidth();
         int getHeight();
-        float* getXFlow();
-        float* getYFlow();
+        float* getXFlowFor();
+        float* getYFlowFor();
+        float* getXFlowBack();
+        float* getYFlowBack();
 };
 
 #endif

@@ -1,43 +1,61 @@
 #include "flowVectorFrame.hpp"
 
+#include <iostream>
+
 using namespace std;
 
 /**
  * @brief Allocate float pointers for the FlowVectorFrame::FlowVectorFrame object
  */
-void FlowVectorFrame::setup(int numVecs) {
-    this->numVecs = numVecs;
-    xFlow = new float[numVecs];
-    yFlow = new float[numVecs];
+void FlowVectorFrame::setup() {
+    xFlowFor = new float[numVecs];
+    yFlowFor = new float[numVecs];
+    xFlowBack = new float[numVecs];
+    yFlowBack = new float[numVecs];
 }
 
 /**
  * @brief Load a frame's info into FlowVectorFrame::FlowVectorFrame object
  *
- * @param file containing unparsed flow vector information
+ * @param file1 containing unparsed forward flow vector information
+ * @param file2 containing unparsed backward flow vector information
  * @param frameIndex denoting the frame
  */
-void FlowVectorFrame::readFloFile(istream& file, int frameIndex) {
+void FlowVectorFrame::readFloFile(istream& file1, istream& file2, int frameIndex) {
     this->frameIndex = frameIndex;
-    float dummy;
+    
+    float dummy, width1, height1, width2, height2, x, y;
+    file1.read(reinterpret_cast<char*>(&dummy), sizeof(float));
+    file1.read(reinterpret_cast<char*>(&width1), sizeof(int));
+    file1.read(reinterpret_cast<char*>(&height1), sizeof(int));
+    file2.read(reinterpret_cast<char*>(&dummy), sizeof(float));
+    file2.read(reinterpret_cast<char*>(&width2), sizeof(int));
+    file2.read(reinterpret_cast<char*>(&height2), sizeof(int));
 
-    file.read(reinterpret_cast<char*>(&dummy), sizeof(float));
-    file.read(reinterpret_cast<char*>(&width), sizeof(int));
-    file.read(reinterpret_cast<char*>(&height), sizeof(int));
-
-    // one time xFlow and yFlow allocation upon processing first frame
+    // one time flow allocations upon processing first frame
     if (!frameIndex) {
-        setup(width * height);
+        width = width1;
+        height = height1;
+        numVecs = width * height;
+        setup();
     }
 
-    // read xFlow and yFlow from file
-    for (int i = 0; i != numVecs; i++) {
-        float x, y;
-        file.read(reinterpret_cast<char*>(&x), sizeof(float));
-        file.read(reinterpret_cast<char*>(&y), sizeof(float));
+    if (width1 != width2 || height1 != height2 || width1 != width || height1 != height) {
+        cout << "FVF: mismatching forward and backward frames in frame " << frameIndex << " . Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
 
-        xFlow[i] = x;
-        yFlow[i] = y;
+    // read forward and backward flows from files
+    for (int i = 0; i != numVecs; i++) {
+        file1.read(reinterpret_cast<char*>(&x), sizeof(float));
+        file1.read(reinterpret_cast<char*>(&y), sizeof(float));
+        xFlowFor[i] = x;
+        yFlowFor[i] = y;
+
+        file2.read(reinterpret_cast<char*>(&x), sizeof(float));
+        file2.read(reinterpret_cast<char*>(&y), sizeof(float));
+        xFlowBack[i] = x;
+        yFlowBack[i] = y;
     }
 }
 
@@ -63,15 +81,29 @@ int FlowVectorFrame::getHeight() {
 }
 
 /**
- * @brief Get a frame's xFlow
+ * @brief Get a frame's forward xFlow
  */
-float* FlowVectorFrame::getXFlow() {
-    return xFlow;
+float* FlowVectorFrame::getXFlowFor() {
+    return xFlowFor;
 }
 
 /**
- * @brief Get a frame's yFlow
+ * @brief Get a frame's forward yFlow
  */
-float* FlowVectorFrame::getYFlow() {
-    return yFlow;
+float* FlowVectorFrame::getYFlowFor() {
+    return yFlowFor;
+}
+
+/**
+ * @brief Get a frame's backward xFlow
+ */
+float* FlowVectorFrame::getXFlowBack() {
+    return xFlowBack;
+}
+
+/**
+ * @brief Get a frame's backward yFlow
+ */
+float* FlowVectorFrame::getYFlowBack() {
+    return yFlowBack;
 }
