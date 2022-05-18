@@ -162,9 +162,8 @@ class BackWarp(torch.nn.Module):
 
         # stack and bilinear interpolation
         frameGrid = torch.stack((xGridFlow, yGridFlow), dim = 3)
-        frame = torch.nn.functional.grid_sample(frame, frameGrid)
 
-        return frame
+        return torch.nn.functional.grid_sample(frame, frameGrid)
 
 def main():
     parser = argparse.ArgumentParser()
