@@ -24,7 +24,8 @@ void FlowVectorFrame::setup() {
 void FlowVectorFrame::readFloFile(istream& file1, istream& file2, int frameIndex) {
     this->frameIndex = frameIndex;
     
-    float dummy, width1, height1, width2, height2, x, y;
+    float dummy, x, y;
+    int width1, height1, width2, height2;
     file1.read(reinterpret_cast<char*>(&dummy), sizeof(float));
     file1.read(reinterpret_cast<char*>(&width1), sizeof(int));
     file1.read(reinterpret_cast<char*>(&height1), sizeof(int));
