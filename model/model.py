@@ -1,4 +1,5 @@
 import torch
+import argparse
 from config import *
 
 class UNet(torch.nn.Module):
@@ -164,3 +165,22 @@ class BackWarp(torch.nn.Module):
         frame = torch.nn.functional.grid_sample(frame, frameGrid)
 
         return frame
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, required=True, help="'Interpolation' for UNet, 'BackWarp' for BackWarp")
+    parser.add_argument("--width", type=int, default=0, help='video width')
+    parser.add_argument("--height", type=int, default=0, help='video height')
+    args = parser.parse_args()
+
+    if args.model == 'Interpolation':
+        interpolationModel = UNet()
+        torch.jit.script(interpolationModel).save('../model/checkpoints/traced_interpolation_model.pt')
+    elif args.model == 'BackWarp':
+        backWarp = BackWarp((args.width, args.height), torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
+        torch.jit.script(backWarp).save('../model/checkpoints/traced_backwarp_model.pt')
+    else:
+        print ('Invalid model arg. Exiting.')
+
+if __name__ == "__main__":
+    main()
