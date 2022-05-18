@@ -18,6 +18,7 @@ class SlowMotionService {
         string outputPath;
         torch::jit::script::Module interpolationModel;
         torch::jit::script::Module backWarpModel;
+        torch::DeviceType device;
         zmq::context_t context;
         zmq::socket_t flowRequester;
         VideoProcessor* videoProcessor;

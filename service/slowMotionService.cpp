@@ -71,7 +71,14 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     cout << "SMS: BackWarp Model is loaded." << endl;
 
     // load models to device
-    torch::DeviceType device = torch::kCUDA;
+    if (torch::cuda::is_available()) {
+        cout << "SMS: Cuda is available. Running on GPU." << endl;
+        device = torch::kCUDA;
+    } else {
+        cout << "SMS: Cuda is NOT available. Running on CPU." << endl;
+        device = torch::kCPU;
+    }
+
     // interpolationModel.to(device);
     backWarpModel.to(device);
 }
@@ -80,7 +87,6 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
  * @brief Process video frames in pairs and created interpolated frames
  */
 void SlowMotionService::startService() {
-    torch::DeviceType device = torch::kCUDA;
     int currFrameIndex = 0;
 
     while (currFrameIndex < videoProcessor->getVideoFrameCount() * slowmoFactor - slowmoFactor) {
@@ -142,6 +148,7 @@ void SlowMotionService::startService() {
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0);
             
+            // TODO: BackWarpModel forward method is not compatible with torchscript
             torch::Tensor g_I0_F_t_0 = this->backWarpModel.forward(backWarpInput).toTensor();
             g_I0_F_t_0.to(device);
 
