@@ -105,7 +105,7 @@ void VideoProcessor::extractVideoFrames() {
 
                 // create output file path
                 stringstream pathBuilder;
-                pathBuilder << YUV_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameCounter << ".yuv";
+                pathBuilder << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameCounter << ".yuv";
                 string filename = pathBuilder.str();
 
                 // output file
@@ -154,22 +154,19 @@ int VideoProcessor::getVideoHeight() {
     return videoHeight;
 }
 
-// TODO
 /**
  * @brief Get a pair of images transformed to tensors
  *
  * @param firstFrameIndex denoting the pair's first frame index
  */
 vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
-
-    //given an index, pass the frame and its next (index + slowMoFactor)
-
+    // given an index, pass the frame and its next (index + slowMoFactor)
     vector<torch::Tensor> framePair;
 
     stringstream pathBuilder1;
-    pathBuilder1 << YUV_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".yuv";
     stringstream pathBuilder2;
-    pathBuilder2 << YUV_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex + this->slowmoFactor << ".yuv";
+    pathBuilder1 << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".yuv";
+    pathBuilder2 << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex + this->slowmoFactor << ".yuv";
     string path1 = pathBuilder1.str();
     string path2 = pathBuilder2.str();
 
@@ -182,7 +179,6 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
     return framePair;
 }
 
-
 /**
  * @brief facilitates the creation of a RGB tensor from a YUV file
  *
@@ -190,7 +186,6 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
  * @return torch::Tensor
  */
 torch::Tensor VideoProcessor::fileToTensor(string file){
-
     vector<int> bytes = VideoProcessor::ReadAllBytes(file);
 
     int frameSize = this->videoHeight * this->videoWidth;
@@ -200,8 +195,6 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     vector<int>::const_iterator endOfU = endOfY + frameSize/4;
     vector<int>::const_iterator endOfV = endOfU + frameSize/4;
 
-
-    
     vector<int> yValues(start,endOfY);
     vector<int> uValues(endOfY,endOfU);
     vector<int> vValues(endOfU,endOfV);
@@ -215,10 +208,9 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     mapColor(uValues, &U);
 
     mapColor(vValues, &V);
-  
-    
 
-    if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()){
+
+    if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()) {
         cout << "YUV file formatted incorrectly, individual tensor sizes are not equal..." << endl;
         cout << "Y Tensor is of size: " << Y.sizes() << endl;
         cout << "U Tensor is of size: " << U.sizes() << endl;
@@ -237,7 +229,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     R = torch::clamp(R, 0, 255);
     G = torch::clamp(G, 0, 255);
     B = torch::clamp(B, 0, 255);
-    
+
     R = R.to(torch::kUInt8);
     G = G.to(torch::kUInt8);
     B = B.to(torch::kUInt8);
@@ -247,14 +239,11 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     B.unsqueeze(0);
 
     torch::Tensor img = torch::empty(0,torch::kUInt8);
-    
+
     img = torch::cat({img,R,G,B},0);
 
     return img.unsqueeze(0);
-
-
 }
-
 
 /**
  * @brief reads the YUV file into a vector of int values
@@ -262,28 +251,26 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
  * @param filename file path to .yuv file
  * @return vector<int>
  */
-
-vector<int> VideoProcessor::ReadAllBytes(string filename)
-{
+vector<int> VideoProcessor::ReadAllBytes(string filename) {
     char * memblock;
     streampos size;
     ifstream ifs(filename, ios::binary|ios::ate);
-    if (ifs.is_open()){
+
+    if (ifs.is_open()) {
         size = ifs.tellg();
         memblock = new char [size];
         ifs.seekg (0, ios::beg);
         ifs.read (memblock, size);
         ifs.close();
-
     } else {
       cout << "Unable to open file: " << filename << endl;
       return vector<int>(0);
     }
 
     vector<char> result(memblock, memblock+size);
-
     vector<int> intResult;
-    for(int i = 0; i < size; i++){
+
+    for(int i = 0; i < size; i++) {
         intResult.push_back(int(result[i]));
     }
 
@@ -296,7 +283,7 @@ vector<int> VideoProcessor::ReadAllBytes(string filename)
  * @param values Y values
  * @param yT Y Tensor
  */
-void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT){
+void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT) {
     int* array = new int[values.size()];
     std::copy(values.begin(), values.end(), array);
     torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, torch::kUInt8);
@@ -321,6 +308,7 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
             rowTensor = torch::empty(0,torch::kUInt8);
         }
     }
+
     *colorT = torch::cat({*colorT, colorTensor},0);
 }
 
@@ -331,14 +319,14 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
  *
  * @param img
  */
-vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
+vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     img.squeeze_();
 
 
     auto R = img[0];
     auto G = img[1];
     auto B = img[2];
-    
+
     R = R.to(torch::kFloat64);
     G = G.to(torch::kFloat64);
     B = B.to(torch::kFloat64);
@@ -356,20 +344,19 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
     Y = Y.to(torch::kInt8);
     U = U.to(torch::kInt8);
     V = V.to(torch::kInt8);
-    
-    Y = Y.contiguous();
-    std::vector<int> vectorY(Y.data_ptr<int>(), Y.data_ptr<int>() + Y.numel());
 
+    Y = Y.contiguous();
+
+    std::vector<int> vectorY(Y.data_ptr<int>(), Y.data_ptr<int>() + Y.numel());
     std::vector<int> vectorU = this->resizeColorVector(U);
     std::vector<int> vectorV = this->resizeColorVector(V);
 
     vectorY.insert(vectorY.end(), vectorU.begin(), vectorU.end());
     vectorY.insert(vectorY.end(), vectorV.begin(), vectorV.end());
 
-
-    //This could be optimized no? feel like theres a better way but havnt found it quite yet
+    // This could be optimized no? feel like theres a better way but havnt found it quite yet
     vector<char> yuvFile;
-    for(int i = 0; i < vectorY.size(); i++){
+    for(int i = 0; i < vectorY.size(); i++) {
         yuvFile.push_back( char(vectorY[i]) );
     }
 
@@ -385,13 +372,11 @@ vector<int> VideoProcessor::resizeColorVector(torch::Tensor color){
     vector<int> resizedVector;
 
     auto access = color.accessor<int,2>();
-    for (int i = 0; i < videoHeight; i += 2){
-        for(int j = 0; j < videoWidth; j += 2 ){
+    for (int i = 0; i < videoHeight; i += 2) {
+        for(int j = 0; j < videoWidth; j += 2 ) {
             resizedVector.push_back(access[i][j]);
         }
     }
+
     return resizedVector;
-
 }
-
-

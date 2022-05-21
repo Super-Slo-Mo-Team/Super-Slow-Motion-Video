@@ -71,23 +71,28 @@ void FlowVectorService::startService() {
  * @param frameIndex denoting which flow frame to retrieve
  */
 void FlowVectorService::createFlowVectorFrame(int frameIndex) {
-    // build file path using frame_index
-    stringstream pathBuilder;
-    pathBuilder << FLO_PATH << "/_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".flo";
-    string filename = pathBuilder.str();
+    // build file paths using frameIndex
+    stringstream floPath1;
+    stringstream floPath2;
+    floPath1 << FLO_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << "_f.flo";
+    floPath2 << FLO_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << "_b.flo";
+    string filename1 = floPath1.str();
+    string filename2 = floPath2.str();
 
     // open file
-    ifstream file = ifstream(filename, ifstream::binary);
+    ifstream file1 = ifstream(filename1, ifstream::binary);
+    ifstream file2 = ifstream(filename2, ifstream::binary);
 
     // error
-    if (!file) {
-        cout << "FVS: No flo file with index " << frameIndex << " in directory: " << FLO_PATH << ". Exiting." << endl;
+    if (!file1 || !file2) {
+        cout << "FVS: No flo files with index " << frameIndex << " in directory: " << FLO_PATH << ". Exiting." << endl;
         exit(EXIT_FAILURE);
     }
 
     // create FlowFrame from file
-    bufferFrame.readFloFile(file, frameIndex);
+    bufferFrame.readFloFile(file1, file2, frameIndex);
 
-    // close file
-    file.close();
+    // close files
+    file1.close();
+    file2.close();
 }
