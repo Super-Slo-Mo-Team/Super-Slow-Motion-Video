@@ -184,7 +184,7 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
 
 
 /**
- * @brief facilitates the creation of a tensor from a YUV file
+ * @brief facilitates the creation of a RGB tensor from a YUV file
  *
  * @param file file path to .yuv file
  * @return torch::Tensor
@@ -206,18 +206,16 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     vector<int> uValues(endOfY,endOfU);
     vector<int> vValues(endOfU,endOfV);
 
-    torch::Tensor Y = torch::empty(0,torch::kInt);
-    torch::Tensor U = torch::empty(0,torch::kInt);
-    torch::Tensor V = torch::empty(0,torch::kInt);
+    torch::Tensor Y = torch::empty(0,torch::kUInt8);
+    torch::Tensor U = torch::empty(0,torch::kUInt8);
+    torch::Tensor V = torch::empty(0,torch::kUInt8);
 
     yTensor(yValues, &Y);
-    Y.unsqueeze_(0);
 
     mapColor(uValues, &U);
-    U.unsqueeze_(0);
 
     mapColor(vValues, &V);
-    V.unsqueeze_(0);
+  
     
 
     if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()){
@@ -228,9 +226,29 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
         exit (EXIT_FAILURE);
     }
 
-    torch::Tensor img = torch::empty(0,torch::kInt);
+    Y = Y.to(torch::kFloat64);
+    U = U.to(torch::kFloat64);
+    V = V.to(torch::kFloat64);
+
+    torch::Tensor R = Y + 1.40200 * (V - 128.0);
+    torch::Tensor G = Y - 0.034414 * (U - 128.0) - 0.71414 * (V- 128.0);
+    torch::Tensor B = Y + 1.77200 * (U - 128.0);
+
+    R = torch::clamp(R, 0, 255);
+    G = torch::clamp(G, 0, 255);
+    B = torch::clamp(B, 0, 255);
     
-    img = torch::cat({img,Y,U,V},0);
+    R = R.to(torch::kUInt8);
+    G = G.to(torch::kUInt8);
+    B = B.to(torch::kUInt8);
+
+    R.unsqueeze(0);
+    G.unsqueeze(0);
+    B.unsqueeze(0);
+
+    torch::Tensor img = torch::empty(0,torch::kUInt8);
+    
+    img = torch::cat({img,R,G,B},0);
 
     return img.unsqueeze(0);
 
@@ -281,7 +299,7 @@ vector<int> VideoProcessor::ReadAllBytes(string filename)
 void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT){
     int* array = new int[values.size()];
     std::copy(values.begin(), values.end(), array);
-    torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, torch::kInt);
+    torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, torch::kUInt8);
     *yT = torch::cat({*yT, yTensor},0);
 }
 
@@ -292,24 +310,22 @@ void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT){
  * @param colorT color Tensor
  */
 void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
-    torch::Tensor colorTensor = torch::empty(0,torch::kInt);
-    torch::Tensor rowTensor = torch::empty(0,torch::kInt);
+    torch::Tensor colorTensor = torch::empty(0,torch::kUInt8);
+    torch::Tensor rowTensor = torch::empty(0,torch::kUInt8);
     for(int i = 0; i < values.size(); i++){
-        torch::Tensor valueTensor = torch::full({2,2}, values[i], torch::kInt);
+        torch::Tensor valueTensor = torch::full({2,2}, values[i], torch::kUInt8);
         rowTensor = torch::cat({rowTensor,valueTensor},1);
 
         if(rowTensor.sizes()[1] == this->videoWidth){
             colorTensor = torch::cat({colorTensor, rowTensor},0);
-            rowTensor = torch::empty(0,torch::kInt);
+            rowTensor = torch::empty(0,torch::kUInt8);
         }
     }
     *colorT = torch::cat({*colorT, colorTensor},0);
-    torch::Tensor unsignedTensorTransform = torch::full({this->videoHeight, this->videoWidth}, 128, torch::kInt);
-    *colorT = torch::add(*colorT, unsignedTensorTransform);
 }
 
 /**
- * @brief takes the tensor, converts it back to a YUV file in the form of a vector<char>
+ * @brief takes the RGB tensor, converts it back to a YUV file in the form of a vector<char>
  *
  * !! Can write this vector to a file by passing &vector[0] as the data
  *
@@ -318,9 +334,29 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
 vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
     img.squeeze_();
 
-    auto Y = img[0];
-    auto U = img[1];
-    auto V = img[2];
+
+    auto R = img[0];
+    auto G = img[1];
+    auto B = img[2];
+    
+    R = R.to(torch::kFloat64);
+    G = G.to(torch::kFloat64);
+    B = B.to(torch::kFloat64);
+
+    torch::Tensor Y = 0.33319*R + 0.65411*G * 0.01270*B;
+    torch::Tensor U = -0.18803*R - 0.36914*G + 0.55717*B + 128.0;
+    torch::Tensor V = 0.47562*R - 0.46656*G - 0.00906*B + 128.0;
+
+    Y = torch::clamp(Y, 0, 255);
+    U = torch::clamp(U, 0, 255);
+    V = torch::clamp(V, 0, 255);
+
+
+    //fairly certainn they originally came in as signed intergers, so I assume we should reformat them this way?
+    Y = Y.to(torch::kInt8);
+    U = U.to(torch::kInt8);
+    V = V.to(torch::kInt8);
+    
     Y = Y.contiguous();
     std::vector<int> vectorY(Y.data_ptr<int>(), Y.data_ptr<int>() + Y.numel());
 
@@ -346,8 +382,6 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img){
  * @param color
  */
 vector<int> VideoProcessor::resizeColorVector(torch::Tensor color){
-    torch::Tensor unsignedTensorTransform = torch::full({this->videoHeight, this->videoWidth}, 128, torch::kInt);
-    color = torch::sub(color,unsignedTensorTransform);
     vector<int> resizedVector;
 
     auto access = color.accessor<int,2>();
