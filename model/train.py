@@ -29,8 +29,6 @@ def yuvToRGBTensor(yuvFile):
                 colorTensor = torch.cat((colorTensor, rowTensor),0)
                 rowTensor = torch.empty(0, dtype=torch.uint8)
         
-        
-
         return colorTensor
 
     width = IMAGE_DIM[0]
@@ -57,7 +55,7 @@ def yuvToRGBTensor(yuvFile):
 
     # conversions for jpeg from: https://www.w3.org/Graphics/JPEG/jfif3.pdf
     R = yTensor + 1.40200 * (vTensor - 128.0)
-    G = yTensor - .034414 * (uTensor - 128.0) - .71414 * (vTensor - 128.0)
+    G = yTensor - .34414 * (uTensor - 128.0) - .71414 * (vTensor - 128.0)
     B = yTensor + 1.77200 * (uTensor - 128.0)
 
     #this seams sus, but some values give results out of bounds so i saw someone else do this
