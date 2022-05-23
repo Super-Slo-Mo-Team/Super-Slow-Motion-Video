@@ -22,6 +22,8 @@ public:
         MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         MESSAGE_HANDLER(WM_SIZE, OnSize)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnErase)
+
+
         //MESSAGE_HANDLER(WM_CONTEXTMENU, FowardMsgToWMP)
         COMMAND_ID_HANDLER(ID_FILE_OPEN, OnFileOpen)
         COMMAND_ID_HANDLER(ID_APP_EXIT, OnFileExit)
@@ -67,13 +69,11 @@ public:
 
     LRESULT OnDestroy(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& bHandled);
     LRESULT OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
-
     LRESULT OnErase(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnFileExit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnPaint(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
-
     LRESULT OnWMPCoreClose(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPCoreURL(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnWMPCoreOpenState(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
@@ -108,10 +108,20 @@ public:
     BSTR extract_filename(BSTR path);
 
     CAxWindow                   m_wndView;
+    CAxWindow                   m_wndView2;
+
     CComPtr<IWMPPlayer>         m_spWMPPlayer;
     CComPtr<IConnectionPoint>   m_spConnectionPoint;
+    CComPtr<IWMPPlayer>         m_2spWMPPlayer;
+    CComPtr<IConnectionPoint>   m_spConnectionPoint2;
     DWORD                       m_dwAdviseCookie;
+    DWORD                       m_dwAdviseCookie2;
+    HWND                        video_player1_title;
+    HWND                        video_player2_title;
+    HWND                        console_display;
     HWND                        open_modal;
+    HWND                        trim1;
+    HWND                        trim2;
     HWND                        popUp_hWnd;
     WNDCLASSW                   popup = { 0 };
     HWND                         hDlg;

@@ -33,7 +33,7 @@ extern "C" int WINAPI wWinMain(HINSTANCE hInstance,
 
     CWMPHost frame;
     frame.GetWndClassInfo().m_wc.hIcon = hIcon;
-    frame.Create(GetDesktopWindow(), rcPos, L"WMP Host Container", 0, 0, hMenu);
+    frame.Create(GetDesktopWindow(), rcPos, L"Super Slo Mo Team", 0, 0, hMenu);
     frame.ShowWindow(SW_SHOWNORMAL);
 
     MSG msg;

@@ -165,7 +165,6 @@ class CStringDlg : public CDialogImpl<CStringDlg>
         }
 
         ::SetFocus(GetDlgItem(IDC_STRING_EDIT1));
-        ::SetFocus(GetDlgItem(IDC_STRING_EDIT2));
 
         CenterWindow();
 
