@@ -122,7 +122,7 @@ void VideoProcessor::extractVideoFrames() {
     }
 
     file.close();
-    cout << "Frames contained in video: " << videoFrameCount << endl;
+    cout << "Frames contained in video: " << videoFrameCount << endl << endl;
 
     if (!videoFrameCount) {
         cout << "Check valid file input." << endl;

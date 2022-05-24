@@ -38,7 +38,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
 
     // initialize requester socket on localhost:8080
     flowRequester = zmq::socket_t(context, ZMQ_REQ);
-    cout << "SMS: Connecting responder to " << FV_SOCKET_PATH << "..." << endl;
+    cout << "Connecting Slow Motion Service responder to " << FV_SOCKET_PATH << "..." << endl << endl;
 	flowRequester.connect(FV_SOCKET_PATH);
 
     // initialize variables
@@ -57,7 +57,7 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     //     cout << "Error loading Frame Interpolation model\n" << endl;
     //     exit(EXIT_FAILURE);
     // }
-    cout << "SMS: Interpolation Model is loaded." << endl;
+    cout << "Interpolation Model is loaded." << endl;
 
     try {
         stringstream command;
@@ -65,17 +65,21 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
         system(command.str().c_str());
         backWarpModel = torch::jit::load(BACKWARP_MODEL_PATH);
     } catch (const c10::Error& e) {
-        cerr << "Error loading BackWarp model\n" << endl;
+        cerr << "Error loading BackWarp model" << endl << endl;
         exit(EXIT_FAILURE);
     }
-    cout << "SMS: BackWarp Model is loaded." << endl;
+    cout << "BackWarp Model is loaded." << endl << endl;;
 
     // load models to device
     if (torch::cuda::is_available()) {
-        cout << "SMS: Cuda is available. Running on GPU." << endl;
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        cout << "Cuda is available. Running on GPU." << endl;
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
         device = torch::kCUDA;
     } else {
-        cout << "SMS: Cuda is NOT available. Running on CPU." << endl;
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        cout << "Cuda is NOT available. Running on CPU." << endl;
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
         device = torch::kCPU;
     }
 

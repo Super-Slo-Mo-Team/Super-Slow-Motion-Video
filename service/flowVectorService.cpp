@@ -31,7 +31,7 @@ FlowVectorService::FlowVectorService() {
 
     // initialize requester socket on localhost:8080
     flowRequester = zmq::socket_t(context, ZMQ_REP);
-    cout << "FVS: Binding responder to " << FV_SOCKET_PATH << "..." << endl;
+    cout << "Binding Flow Vector Service responder to " << FV_SOCKET_PATH << "..." << endl;
 	flowRequester.bind(FV_SOCKET_PATH);
 }
 
