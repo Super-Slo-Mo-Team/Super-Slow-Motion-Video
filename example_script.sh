@@ -1,10 +1,9 @@
 #!/bin/bash
 
 INPUT="IO/input.y4m"
-OUTPUT="IO/output.y4m"
-SLOWDOWN=2
-FPS=50
-
+OUTPUT="IO/output.mp4"
+SLOWDOWN=4
+FPS=25
 TMP="IO/temp.yuv"
 
 rm build/yuv/*
