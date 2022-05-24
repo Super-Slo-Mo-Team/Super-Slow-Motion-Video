@@ -15,7 +15,7 @@ def getFlow(directory):
             output_dir = root + "/" + name + "_out"
             os.makedirs(output_dir)
             # run app of cuda with output
-            subprocess.run([CUDA_COMMAND, f'--input={directory}\\{name}\\*.yuv', f"--output={output_dir}/"], "--subdirInput=true")
+            subprocess.run([CUDA_COMMAND, f'--input={directory}\\{name}\\*.yuv', f"--output={output_dir}/", "--subdirInput=True"])
  
 
 def main():
@@ -23,5 +23,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-        
+       
