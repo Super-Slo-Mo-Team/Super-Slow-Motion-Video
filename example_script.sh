@@ -15,4 +15,4 @@ cd ..
 
 cat build/tmp/yuv/*.yuv > $TMP
 ffmpeg -f rawvideo -pix_fmt yuv420p -s:v 352x288 -r $FPS -i $TMP -c:v libx264 $OUTPUT
-rm IO/temp.yuv
+rm $TMP

@@ -1,15 +1,20 @@
+import os
 import numpy as np
 import torchvision.transforms as transforms
+
+# CUDA command
+
+CUDA_COMMAND = "C:\\Users\\SeanH\\Documents\\superSloMo\\Optical_Flow_SDK_3.0.15\\NvOFBasicSamples\\build\\AppOFCuda\\Debug\\AppOFCuda.exe"
 
 # Path Macros
 
 TRAINING_ROOT_PATH          = 'data.nosync'
 DATASET_FOLDER_NAME         = 'original_high_fps_videos'
-VIDEO_DATASET_PATH          = TRAINING_ROOT_PATH + '/' + DATASET_FOLDER_NAME
-TRAINING_TMP_PATH           = TRAINING_ROOT_PATH + '/tmp'
-TRAINING_TRAIN_PATH         = TRAINING_ROOT_PATH + '/train'
-TRAINING_TEST_PATH          = TRAINING_ROOT_PATH + '/test'
-TRAINING_VALIDATE_PATH      = TRAINING_ROOT_PATH + '/validate'
+VIDEO_DATASET_PATH          = os.path.join(TRAINING_ROOT_PATH, DATASET_FOLDER_NAME)
+TRAINING_TMP_PATH           = os.path.join(TRAINING_ROOT_PATH, 'tmp')
+TRAINING_TRAIN_PATH         = os.path.join(TRAINING_ROOT_PATH, 'train')
+TRAINING_TEST_PATH          = os.path.join(TRAINING_ROOT_PATH, 'test')
+TRAINING_VALIDATE_PATH      = os.path.join(TRAINING_ROOT_PATH, 'validate')
 TRAINING_CHECKPOINT_PATH    = 'checkpoints'
 
 # Dimensions
