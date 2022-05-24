@@ -237,7 +237,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     G = G.unsqueeze(0);
     B = B.unsqueeze(0);
 
-    torch::Tensor img = torch::empty(0,torch::kUInt8);
+    torch::Tensor img = torch::empty(0,torch::kFloat32);
 
     img = torch::cat({img,R,G,B},0);
 
