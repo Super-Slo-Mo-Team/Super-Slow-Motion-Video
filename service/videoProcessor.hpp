@@ -30,7 +30,7 @@ class VideoProcessor {
         void yTensor(std::vector<int> values, torch::Tensor* yT);
 
         vector<char> tensorToYUV(torch::Tensor img);
-        vector<int> resizeColorVector(torch::Tensor color);
+        vector<char> resizeColorVector(torch::Tensor color);
 };
 
 #endif

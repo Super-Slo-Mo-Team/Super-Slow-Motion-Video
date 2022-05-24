@@ -209,7 +209,6 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
 
     mapColor(vValues, &V);
 
-
     if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()) {
         cout << "YUV file formatted incorrectly, individual tensor sizes are not equal..." << endl;
         cout << "Y Tensor is of size: " << Y.sizes() << endl;
@@ -223,7 +222,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     V = V.to(torch::kFloat64);
 
     torch::Tensor R = Y + 1.40200 * (V - 128.0);
-    torch::Tensor G = Y - 0.034414 * (U - 128.0) - 0.71414 * (V- 128.0);
+    torch::Tensor G = Y - 0.34414 * (U - 128.0) - 0.71414 * (V - 128.0);
     torch::Tensor B = Y + 1.77200 * (U - 128.0);
 
     R = torch::clamp(R, 0, 255);
@@ -234,9 +233,9 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     G = G.to(torch::kUInt8);
     B = B.to(torch::kUInt8);
 
-    R.unsqueeze(0);
-    G.unsqueeze(0);
-    B.unsqueeze(0);
+    R = R.unsqueeze(0);
+    G = G.unsqueeze(0);
+    B = B.unsqueeze(0);
 
     torch::Tensor img = torch::empty(0,torch::kUInt8);
 
@@ -284,9 +283,10 @@ vector<int> VideoProcessor::ReadAllBytes(string filename) {
  * @param yT Y Tensor
  */
 void VideoProcessor::yTensor(std::vector<int> values, torch::Tensor* yT) {
-    int* array = new int[values.size()];
+    int8_t* array = new int8_t[values.size()];
     std::copy(values.begin(), values.end(), array);
-    torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, torch::kUInt8);
+    auto options = torch::TensorOptions().dtype(torch::kUInt8);
+    torch::Tensor yTensor = torch::from_blob(array,{this->videoHeight,this->videoWidth}, options);
     *yT = torch::cat({*yT, yTensor},0);
 }
 
@@ -322,44 +322,36 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
 vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     img.squeeze_();
 
-
     auto R = img[0];
     auto G = img[1];
     auto B = img[2];
-
     R = R.to(torch::kFloat64);
     G = G.to(torch::kFloat64);
     B = B.to(torch::kFloat64);
-
-    torch::Tensor Y = 0.33319*R + 0.65411*G * 0.01270*B;
-    torch::Tensor U = -0.18803*R - 0.36914*G + 0.55717*B + 128.0;
-    torch::Tensor V = 0.47562*R - 0.46656*G - 0.00906*B + 128.0;
+   
+    torch::Tensor Y = 0.299*R + 0.586996*G + 0.114*B;
+    torch::Tensor U = -0.16874*R - 0.331264*G + 0.49999*B + 128.0;
+    torch::Tensor V = 0.49999*R - 0.41869*G - 0.08131*B + 128.0;
 
     Y = torch::clamp(Y, 0, 255);
     U = torch::clamp(U, 0, 255);
     V = torch::clamp(V, 0, 255);
 
-
-    //fairly certainn they originally came in as signed intergers, so I assume we should reformat them this way?
+    //came in as signed, converting them back for consistency
     Y = Y.to(torch::kInt8);
     U = U.to(torch::kInt8);
     V = V.to(torch::kInt8);
 
     Y = Y.contiguous();
-
-    std::vector<int> vectorY(Y.data_ptr<int>(), Y.data_ptr<int>() + Y.numel());
-    std::vector<int> vectorU = this->resizeColorVector(U);
-    std::vector<int> vectorV = this->resizeColorVector(V);
-
+    std::vector<int8_t> vectorY(Y.data_ptr<int8_t>(), Y.data_ptr<int8_t>() + Y.numel());
+    
+    std::vector<char> vectorU = this->resizeColorVector(U);
+    std::vector<char> vectorV = this->resizeColorVector(V);
     vectorY.insert(vectorY.end(), vectorU.begin(), vectorU.end());
     vectorY.insert(vectorY.end(), vectorV.begin(), vectorV.end());
 
-    // This could be optimized no? feel like theres a better way but havnt found it quite yet
-    vector<char> yuvFile;
-    for(int i = 0; i < vectorY.size(); i++) {
-        yuvFile.push_back( char(vectorY[i]) );
-    }
-
+    vector<char> yuvFile(vectorY.begin(), vectorY.end());
+    
     return yuvFile;
 }
 
@@ -368,10 +360,10 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
  *
  * @param color
  */
-vector<int> VideoProcessor::resizeColorVector(torch::Tensor color){
-    vector<int> resizedVector;
+vector<char> VideoProcessor::resizeColorVector(torch::Tensor color){
+    vector<char> resizedVector;
 
-    auto access = color.accessor<int,2>();
+    auto access = color.accessor<int8_t,2>();
     for (int i = 0; i < videoHeight; i += 2) {
         for(int j = 0; j < videoWidth; j += 2 ) {
             resizedVector.push_back(access[i][j]);
