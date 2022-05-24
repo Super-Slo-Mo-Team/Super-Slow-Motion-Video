@@ -59,29 +59,18 @@ std::vector<const wchar_t*> console_output;
 int LINES = 0;
 
 static HFONT s_hFont = NULL;
-/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////// Forward Declarations //////////////////////////////////////////////
 LRESULT CALLBACK PopupProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-LRESULT CALLBACK MyTextWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
 BSTR Concat(BSTR a, BSTR b);
-class outbuf : public std::streambuf {
-public:
-    outbuf() {
-        setp(0, 0);
-    }
-
-    virtual int_type overflow(int_type c = traits_type::eof()) {
-        return fputc(c, stdout) == EOF ? traits_type::eof() : c;
-    }
-};
+ //////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWMPHost::OnFinalMessage(HWND /*hWnd*/)
 {
     ::PostQuitMessage(0);
 }
-
-
 
 LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
 {
@@ -122,16 +111,19 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
     wc.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
     wc.lpszClassName = L"scroll_window";
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpfnWndProc = MyTextWindowProc;
+    wc.hbrBackground = CreateSolidBrush(RGB(46, 42, 45));
+    wc.lpfnWndProc = ConsoleProc;
     RegisterClass(&wc);
-    console_display = CreateWindow(L"scroll_window", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+    console_display = CreateWindow(L"scroll_window", L"", WS_OVERLAPPED | WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
         200, 200, (LONG)(.4 * (rcClient.right - rcClient.left)), (LONG)(.4 * (rcClient.bottom - rcClient.top)), // x, y, w, h
         m_hWnd,
         NULL,
         NULL,
         NULL);
-   console_output.push_back(L"Hello");
+    for (int i = 0; i < 30; i++) {
+        console_output.push_back(L"Hello");
+    }
+
    console_output.push_back(L"Select a video to slowdown");
    LINES = (int)(console_output.size());
    SendMessage(console_display, WM_PAINT, NULL, NULL);
@@ -196,7 +188,7 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         SetMenuInfo(hMenu, &mi);
     }
    
-   
+    
     trim1 = CreateWindow(
         L"BUTTON",  // Predefined class; Unicode assumed 
         L"Trim",      // Button text 
@@ -350,16 +342,7 @@ FAILURE:
     ::PostQuitMessage(0);
     return 0;
 }
-//LRESULT CWMPHost::OnPaint(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
- /* {
-    PAINTSTRUCT ps;
-    HDC hDC = m_wndView.BeginPaint(&ps);
-    //Use the hDC as much as you want
-    ::Rectangle(hDC, 0, 0, 150, 150);
-
-    m_wndView.EndPaint(&ps);
-    return 0;
-}*/
+ 
 LRESULT CWMPHost::OnDestroy(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& bHandled)
 {
     // stop listening to events
@@ -434,6 +417,7 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     LONG yModal8 = (LONG)(0.60 * size_rcHeight);
     LONG widthModal8 = (LONG)(size_rcWidth * .40);
     LONG heightModal8 = (LONG)(widthModal8/1.8);
+ 
 
     m_wndView.MoveWindow(xPlayer1, yPlayer1, widthPlayer1, heightPlayer1, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     m_wndView2.MoveWindow(xPlayer2, yPlayer2, widthPlayer2, heightPlayer2, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
@@ -447,47 +431,52 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
         yModal4, yModal4,
         (LONG)(.05 * (size_rcClient.bottom - size_rcClient.top)), SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(console_display, xModal8, yModal8, widthModal8, heightModal8, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    RECT movedRect = { xModal8, yModal8, widthModal8, heightModal8 };
+    ::RedrawWindow(console_display, &movedRect, 0, RDW_INVALIDATE | RDW_FRAME);
+
+
+
     HBRUSH brush = CreateSolidBrush(RGB(79, 91, 102)); //create brush
     RECT rect;
 
     int w_length = (int)(wcslen(L"Input Video"));
     // Write a line of text to the client area.
    
-    HDC input_video_window = ::GetDC(video_player1_title);
-    SelectObject(input_video_window, brush); //select brush into DC
-    Rectangle(input_video_window, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
+    HDC InputVideoDC = ::GetDC(video_player1_title);
+    SelectObject(InputVideoDC, brush); //select brush into DC
+    Rectangle(InputVideoDC, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
 
-    SetTextColor(input_video_window, 0x00FFFFFF);
+    SetTextColor(InputVideoDC, 0x00FFFFFF);
 
-    SetTextAlign(input_video_window, TA_CENTER);
+    SetTextAlign(InputVideoDC, TA_CENTER);
     ::GetClientRect(video_player1_title, &rect);
-    SetBkMode(input_video_window, TRANSPARENT);
-    TextOut(input_video_window, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
+    SetBkMode(InputVideoDC, TRANSPARENT);
+    TextOut(InputVideoDC, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
         L"Input Video", static_cast<int> (w_length));
     
     HDC screenDC = GetDC(); //NULL gets whole screen
-
+   
     SelectObject(screenDC, brush); //select brush into DC
     Rectangle(screenDC, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
     
     ::ReleaseDC(NULL,screenDC);
  
-    HDC output_dc = ::GetDC(video_player2_title); //NULL gets whole screen
+    HDC OutputVideoDC = ::GetDC(video_player2_title); //NULL gets whole screen
 
     w_length = (int)wcslen(L"Output Video");
     // Write a line of text to the client area.
-    SelectObject(output_dc, brush); //select brush into DC
-    Rectangle(output_dc, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
-    SetTextAlign(output_dc, TA_CENTER);
-   
+    SelectObject(OutputVideoDC, brush); //select brush into DC
+    Rectangle(OutputVideoDC, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
+    SetTextAlign(OutputVideoDC, TA_CENTER);
+    SetTextColor(OutputVideoDC, 0x00FFFFFF);
+
     ::GetClientRect(video_player2_title, &rect);
-    SetBkMode(output_dc, TRANSPARENT);
-    TextOut(output_dc, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
+    SetBkMode(OutputVideoDC, TRANSPARENT);
+    TextOut(OutputVideoDC, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
         L"Output Video", static_cast<int> (w_length));
 
     return 0;
 }
-
 
 LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */)
 {
@@ -1305,7 +1294,7 @@ BOOL OnInitUpdownDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
 //  PURPOSE:  Processes messages for the Updown control dialog.
 //
 //
-LRESULT OnOk(HWND hWnd, int id, HWND /*hWndCtl*/ , UINT /*codeNotify*/) {
+LRESULT OnUpDownOk(HWND hWnd, int id, HWND /*hWndCtl*/ , UINT /*codeNotify*/) {
 
 
 
@@ -1363,7 +1352,7 @@ INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         // Handle the WM_CLOSE message in OnClose
         HANDLE_MSG(hWnd, WM_CLOSE, OnClose);
 
-        HANDLE_MSG(hWnd, WM_COMMAND, OnOk);
+        HANDLE_MSG(hWnd, WM_COMMAND, OnUpDownOk);
 
     default:
         return FALSE;	// Let system deal with msg
@@ -1375,7 +1364,7 @@ INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
 
 
-LRESULT CALLBACK MyTextWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HDC hdc;
     PAINTSTRUCT ps;
@@ -1562,6 +1551,7 @@ LRESULT CALLBACK MyTextWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
         return 0;
 
     case WM_PAINT:
+       
         // Prepare the window for painting.
         hdc = BeginPaint(hwnd, &ps);
 
@@ -1574,7 +1564,7 @@ LRESULT CALLBACK MyTextWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
         // Get horizontal scroll bar position.
         GetScrollInfo(hwnd, SB_HORZ, &si);
         xPos = si.nPos;
-
+       
         // Find painting limits.
         FirstLine = max(0, yPos + ps.rcPaint.top / yChar);
         LastLine = min(LINES - 1, yPos + ps.rcPaint.bottom / yChar);
@@ -1587,6 +1577,7 @@ LRESULT CALLBACK MyTextWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             // Note that "55" in the following depends on the 
             // maximum size of an abc[] item. Also, you must include
             // strsafe.h to use the StringCchLength function.
+            SetTextColor(hdc, 0x00FFFFFF);
             w_length = wcslen(console_output.at(i));
             SetBkMode(hdc, TRANSPARENT);
 
