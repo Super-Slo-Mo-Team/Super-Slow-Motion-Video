@@ -151,20 +151,17 @@ void SlowMotionService::startService() {
             std::vector<torch::jit::IValue> backWarpInput;
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0);
-            
-            // TODO: BackWarpModel forward method is not compatible with torchscript
             torch::Tensor g_I0_F_t_0 = this->backWarpModel.forward(backWarpInput).toTensor();
-            g_I0_F_t_0.to(device);
-
             backWarpInput.clear();
           
+            // second pass of backwarp
             backWarpInput.push_back(I1);
             backWarpInput.push_back(F_t_1);
-            
             torch::Tensor g_I1_F_t_1 = this->backWarpModel.forward(backWarpInput).toTensor();
-            g_I1_F_t_1.to(device);
-
             backWarpInput.clear();
+
+            g_I0_F_t_0.to(device);
+            g_I1_F_t_1.to(device);
 
             // interpolation
             // TODO: do these need to be concatenated then placed as a single tensor into the vector??
