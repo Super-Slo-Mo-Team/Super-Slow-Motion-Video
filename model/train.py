@@ -10,67 +10,7 @@ import datetime
 from config import *
 from model import UNet, BackWarp
 
-# TODO: write
-def floToTensor(floFile):
-    return
-
-# pass in the path to the YUV file
-def yuvToRGBTensor(yuvFile):
-    # helper function to map U&V Values to the same size as the Y Tensor
-    def mapColor(colorValues, width):
-        colorTensor = torch.empty(0, dtype=torch.uint8)
-        rowTensor = torch.empty(0, dtype=torch.uint8)
-
-        for i in range(colorValues.size):
-            valueTensor = torch.full((2,2), colorValues[i], dtype=torch.uint8)
-            rowTensor = torch.cat((rowTensor,valueTensor),1)
-
-            if rowTensor.shape[1] == width:
-                colorTensor = torch.cat((colorTensor, rowTensor),0)
-                rowTensor = torch.empty(0, dtype=torch.uint8)
-        
-        return colorTensor
-
-    width = IMAGE_DIM[0]
-    height = IMAGE_DIM[1]
-    imgSize = width * height
-
-    yValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize, offset = 0)
-    uValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize)
-    vValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize + (imgSize//4))
-    
-    yValues = yValues.astype("uint8")
-    uValues = uValues.astype("uint8")
-    vValues = vValues.astype("uint8")
-
-    yTensor = torch.from_numpy(yValues)
-    yTensor = torch.reshape(yTensor, (height,width))
-    yTensor = yTensor.type(torch.float64)
-
-    uTensor = mapColor(uValues,width)
-    uTensor = uTensor.type(torch.float64)
-
-    vTensor = mapColor(vValues,width)
-    vTensor = vTensor.type(torch.float64)
-
-    # conversions for jpeg from: https://www.w3.org/Graphics/JPEG/jfif3.pdf
-    R = yTensor + 1.40200 * (vTensor - 128.0)
-    G = yTensor - .34414 * (uTensor - 128.0) - .71414 * (vTensor - 128.0)
-    B = yTensor + 1.77200 * (uTensor - 128.0)
-
-    #this seams sus, but some values give results out of bounds so i saw someone else do this
-    R = torch.clamp(R, min=0, max =255)
-    G = torch.clamp(G, min=0, max =255)
-    B = torch.clamp(B, min=0, max =255)
-    R = R.type(torch.uint8).unsqueeze_(0)
-    G = G.type(torch.uint8).unsqueeze_(0)
-    B = B.type(torch.uint8).unsqueeze_(0)
-
-    rgbTensor = torch.cat((R,G,B),0)
-
-    rgbTensor.unsqueeze_(0)
-
-    return rgbTensor
+#
 
 class DataSet(torch.utils.data.Dataset):
     def __init__(self, root, train):
@@ -129,7 +69,7 @@ class DataSet(torch.utils.data.Dataset):
             randomFrameFlip = 0
         
         for frameIndex in frameRange:
-            img = yuvToRGBTensor(self.framesPath[index][frameIndex])
+            img = self.yuvToRGBTensor(self.framesPath[index][frameIndex])
             img = torchvision.transforms.functional.crop(img, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
             img = torch.flip(img, [3]) if randomFrameFlip else img
             sample.append(img)
@@ -139,8 +79,8 @@ class DataSet(torch.utils.data.Dataset):
         F_1_0_path = self.flowVectorsPath[index][2 * firstFrame + 1]
 
         # load as tensors, crop, flip
-        F_0_1 = floToTensor(F_0_1_path)
-        F_1_0 = floToTensor(F_1_0_path)
+        F_0_1 = self.floToTensor(F_0_1_path)
+        F_1_0 = self.floToTensor(F_1_0_path)
         F_0_1 = torchvision.transforms.functional.crop(F_0_1, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
         F_1_0 = torchvision.transforms.functional.crop(F_1_0, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
         F_0_1 = torch.flip(F_0_1, [3]) if randomFrameFlip else F_0_1
@@ -154,6 +94,84 @@ class DataSet(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.framesPath)
+
+    def floToTensor(floFile):
+        dummy = np.fromfile(floFile, dtype=np.dtype(np.float32), count = 1, offset = 0)[0]
+        width = np.fromfile(floFile, dtype=np.dtype(np.int32), count = 1, offset = 4)[0]
+        height = np.fromfile(floFile, dtype=np.dtype(np.int32), count = 1, offset = 8)[0]
+        if (dummy != 202021.25):
+            print("Something went wrong with the .flo extraction, first 4 bytes are not equal to 202021.25")
+            return
+
+        floValues = np.fromfile(floFile, dtype=np.dtype(np.float32), count = -1, offset = 12)
+
+        xFlo = floValues[0::2]
+        yFlo = floValues[1::2]
+
+        xTensor = torch.from_numpy(xFlo)
+        xTensor = torch.reshape(xTensor, (1,height,width))
+
+        yTensor = torch.from_numpy(yFlo)
+        yTensor = torch.reshape(yTensor, (1,height,width))
+
+        floTensor = torch.cat((xTensor,yTensor),0)
+        return floTensor
+
+    def yuvToRGBTensor(yuvFile):
+    # helper function to map U&V Values to the same size as the Y Tensor
+        def mapColor(colorValues, width):
+            colorTensor = torch.empty(0, dtype=torch.uint8)
+            rowTensor = torch.empty(0, dtype=torch.uint8)
+
+            for i in range(colorValues.size):
+                valueTensor = torch.full((2,2), colorValues[i], dtype=torch.uint8)
+                rowTensor = torch.cat((rowTensor,valueTensor),1)
+
+                if rowTensor.shape[1] == width:
+                    colorTensor = torch.cat((colorTensor, rowTensor),0)
+                    rowTensor = torch.empty(0, dtype=torch.uint8)
+        
+            return colorTensor
+
+        width = IMAGE_DIM[0]
+        height = IMAGE_DIM[1]
+        imgSize = width * height
+
+        yValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize, offset = 0)
+        uValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize)
+        vValues = np.fromfile(yuvFile, dtype=np.dtype('b'), count = imgSize//4, offset = imgSize + (imgSize//4))
+    
+        yValues = yValues.astype("uint8")
+        uValues = uValues.astype("uint8")
+        vValues = vValues.astype("uint8")
+
+        yTensor = torch.from_numpy(yValues)
+        yTensor = torch.reshape(yTensor, (height,width))
+        yTensor = yTensor.type(torch.float64)
+
+        uTensor = mapColor(uValues,width)
+        uTensor = uTensor.type(torch.float64)
+
+        vTensor = mapColor(vValues,width)
+        vTensor = vTensor.type(torch.float64)
+
+    # conversions for jpeg from: https://www.w3.org/Graphics/JPEG/jfif3.pdf
+        R = yTensor + 1.40200 * (vTensor - 128.0)
+        G = yTensor - .34414 * (uTensor - 128.0) - .71414 * (vTensor - 128.0)
+        B = yTensor + 1.77200 * (uTensor - 128.0)
+
+        R = torch.clamp(R, min=0, max =255)
+        G = torch.clamp(G, min=0, max =255)
+        B = torch.clamp(B, min=0, max =255)
+        R = R.type(torch.uint8).unsqueeze_(0)
+        G = G.type(torch.uint8).unsqueeze_(0)
+        B = B.type(torch.uint8).unsqueeze_(0)
+
+        rgbTensor = torch.cat((R,G,B),0)
+
+        rgbTensor.unsqueeze_(0)
+
+        return rgbTensor
 
 class TrainRoutine():
     def __init__(self):
