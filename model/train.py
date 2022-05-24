@@ -381,3 +381,11 @@ class TrainRoutine():
 
                 torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(checkpoint_counter) + '.ckpt')
                 checkpoint_counter += 1
+
+def main():
+    mainTrainRoutine = TrainRoutine()
+    print ('Success with Initiation')
+    mainTrainRoutine.train()
+
+if __name__ == "__main__":
+    main()
