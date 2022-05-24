@@ -1,7 +1,6 @@
-from ctypes.wintypes import RGB
-from regex import R
 import torch
 import torchvision
+from PIL import Image
 import numpy as np
 from math import log10
 import os
@@ -10,8 +9,7 @@ import datetime
 from config import *
 from model import UNet, BackWarp
 
-#
-
+# Class containing dataset loading methods
 class DataSet(torch.utils.data.Dataset):
     def __init__(self, root, train):
         framesPath = []
@@ -24,7 +22,7 @@ class DataSet(torch.utils.data.Dataset):
                 framesPath.append([])
                 flowVectorsPath.append([])
                 for image in sorted(os.listdir(clipsFolderPath)):
-                    if image[-4:] == '.yuv':
+                    if image[-4:] == '.jpg':
                         framesPath[i].append(os.path.join(clipsFolderPath, image))
                     elif image[-4:] == '.flo':
                         flowVectorsPath[i].append(os.path.join(clipsFolderPath, image))
@@ -69,10 +67,12 @@ class DataSet(torch.utils.data.Dataset):
             randomFrameFlip = 0
         
         for frameIndex in frameRange:
-            img = self.yuvToRGBTensor(self.framesPath[index][frameIndex])
-            img = torchvision.transforms.functional.crop(img, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
-            img = torch.flip(img, [3]) if randomFrameFlip else img
-            sample.append(img)
+            with open(self.framesPath[index][frameIndex], 'rb') as f:
+                frame = Image.open(f)
+                frame = frame.crop((cropArea[1], cropArea[0], cropArea[1] + cropArea[3], cropArea[0] + cropArea[2]))
+                frame = frame.transpose(Image.FLIP_LEFT_RIGHT) if randomFrameFlip else frame
+                frame = FRAME_TRANSFORM(frame.convert('RGB'))
+                sample.append(frame)
 
         # get corresponding F_0_1 and F_1_0 to sample frames
         F_0_1_path = self.flowVectorsPath[index][2 * firstFrame]
@@ -173,6 +173,7 @@ class DataSet(torch.utils.data.Dataset):
 
         return rgbTensor
 
+# Class containing all training methods
 class TrainRoutine():
     def __init__(self):
         # initialize device
@@ -344,7 +345,6 @@ class TrainRoutine():
                 recnLoss = self.L1_lossFn(Ft_p, IFrame)
                 prcpLoss = self.MSE_lossFn(self.vgg16_conv_4_3(Ft_p), self.vgg16_conv_4_3(IFrame))
                 warpLoss = self.L1_lossFn(g_I0_F_t_0, IFrame) + self.L1_lossFn(g_I1_F_t_1, IFrame) + self.L1_lossFn(self.trainBackWarp(I0, F_1_0), I1) + self.L1_lossFn(self.trainBackWarp(I1, F_0_1), I0)
-                # TODO: divide each coefficient by 255 I think
                 loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss
 
                 # backpropagate

@@ -53,7 +53,7 @@ def main():
         os.mkdir(framePath)
 
         retval = os.system(
-            "ffmpeg -i {} -vf 'scale={}:{},fps={}' -qscale:v 2 {}/%04d.jpg".format(
+            "ffmpeg -i {} -vf 'scale={}:{},fps={}' -qscale:v 2 {}/%05d.jpg".format(
                 os.path.join(VIDEO_DATASET_PATH, video),
                 IMAGE_DIM[0],
                 IMAGE_DIM[1],

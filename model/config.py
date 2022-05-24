@@ -1,4 +1,5 @@
 import numpy as np
+import torchvision.transforms as transforms
 
 # Path Macros
 
@@ -20,6 +21,13 @@ VALIDATE_RANDOM_CROP_SIZE = (640, 352)  # validation random crop size
 # Misc
 
 TSTEPS = np.linspace(0.125, 0.875, 7)   # array of timesteps for intermediate frame calculations
+FRAME_TRANSFORM = transforms.Compose([  # transformation to apply to images from the adobe240fps dataset
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.429, 0.431, 0.397],
+        std=[1, 1, 1]
+    )
+])
 
 # Training Macros
 
