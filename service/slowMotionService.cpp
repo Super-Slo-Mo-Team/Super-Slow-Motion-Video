@@ -95,7 +95,7 @@ void SlowMotionService::startService() {
 
     while (currFrameIndex < videoProcessor->getVideoFrameCount() * slowmoFactor - slowmoFactor) {
         // send request with frame number
-        s_send(flowRequester, to_string(currFrameIndex));
+        s_send(flowRequester, to_string(currFrameIndex / slowmoFactor));
         
         // receive message
         string serializedMsg = s_recv(flowRequester);
@@ -106,7 +106,7 @@ void SlowMotionService::startService() {
         deserializer >> bufferFrame;
 
         // wrong object received
-        if (currFrameIndex != bufferFrame.getFrameIndex()) {
+        if (currFrameIndex / slowmoFactor != bufferFrame.getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
@@ -136,34 +136,28 @@ void SlowMotionService::startService() {
 
         // generate intermediate frames
         for(float i = 1; i != slowmoFactor; i++) {
-            float t = i / slowmoFactor;
-            float fCoeff0 = -t * (1-t);
-            float fCoeff1 = t * t;
-            float fCoeff2 = (1 - t) * (1 - t);
-            float fCoeff3 = fCoeff0;
+            float t = float(i) / slowmoFactor;
 
-            torch::Tensor F_t_0 = torch::add((fCoeff0 * F_0_1), (fCoeff1 * F_1_0));
-            torch::Tensor F_t_1 = torch::add((fCoeff2 * F_0_1), (fCoeff3 * F_1_0));
+            // calculate intermediate vector flows
+            torch::Tensor F_t_0 = torch::add(((-t*(1-t)) * F_0_1), ((t*t) * F_1_0));
+            torch::Tensor F_t_1 = torch::add((((1-t)*(1-t)) * F_0_1), ((-t*(1-t)) * F_1_0));
             F_t_0.to(device);
             F_t_1.to(device);
 
-            // first pass of backwarp
+            // bilinearly interpolate frames at current time step t from the input frames and optical flows
             std::vector<torch::jit::IValue> backWarpInput;
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0);
             torch::Tensor g_I0_F_t_0 = this->backWarpModel.forward(backWarpInput).toTensor();
             backWarpInput.clear();
-          
-            // second pass of backwarp
             backWarpInput.push_back(I1);
             backWarpInput.push_back(F_t_1);
             torch::Tensor g_I1_F_t_1 = this->backWarpModel.forward(backWarpInput).toTensor();
             backWarpInput.clear();
-
             g_I0_F_t_0.to(device);
             g_I1_F_t_1.to(device);
 
-            // interpolation
+            // refine interpolation and generate soft visibility maps
             // TODO: do these need to be concatenated then placed as a single tensor into the vector??
             // std::vector<torch::jit::IValue> interpolationInput;
             // interpolationInput.push_back(I0);
@@ -197,12 +191,9 @@ void SlowMotionService::startService() {
             // torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
             // backWarpInput.clear();
 
-            float wCoeff0 = 1 - t;
-            float wCoeff1 = t;
-
-            // creates img tensor, converts to vector of char, then written to interpolation directory
+            // fuse warped images to create an interpolated frame
             // torch::Tensor Ft_p = (wCoeff0 * V_t_0 * g_I0_F_t_0_f + wCoeff1 * V_t_1 * g_I1_F_t_1_f ) / (wCoeff0 * V_t_0 + wCoeff1 * V_t_1);
-            torch::Tensor Ft_p = wCoeff0 * g_I0_F_t_0 + wCoeff1 * g_I1_F_t_1;
+            torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
 
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
 

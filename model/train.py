@@ -75,8 +75,8 @@ class DataSet(torch.utils.data.Dataset):
                 sample.append(frame)
 
         # get corresponding F_0_1 and F_1_0 to sample frames
-        F_0_1_path = self.flowVectorsPath[index][2 * firstFrame]
-        F_1_0_path = self.flowVectorsPath[index][2 * firstFrame + 1]
+        F_0_1_path = self.flowVectorsPath[index][firstFrame]
+        F_1_0_path = self.flowVectorsPath[index][firstFrame + 4]
 
         # load as tensors, crop, flip
         F_0_1 = self.floToTensor(F_0_1_path)
