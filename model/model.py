@@ -138,17 +138,19 @@ class BackWarp(torch.nn.Module):
         
         # create a grid (require torch 1.10.2)
         self.xGrid, self.yGrid = torch.meshgrid(torch.arange(0, self.width, 1),torch.arange(0, self.height, 1), indexing="xy")
-        
+       
         self.xGrid.requires_grad = False
         self.yGrid.requires_grad = False
-        self.xGrid.to(device)
-        self.yGrid.to(device)
+        self.xGrid = self.xGrid.to(device)
+        self.yGrid = self.yGrid.to(device)
+        
 
     def forward(self, frame, F_t):
         # get xFlow and yFlow tensors
+        
         xFlow_t = F_t[:, 0, :, :]
         yFlow_t = F_t[:, 1, :, :]
-
+        
         # calculate xGridFlow and yGridFlow
         xGridFlow = self.xGrid.unsqueeze(0).expand_as(xFlow_t).float() + xFlow_t
         yGridFlow = self.yGrid.unsqueeze(0).expand_as(yFlow_t).float() + yFlow_t
