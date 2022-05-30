@@ -26,6 +26,8 @@ class DataSet(torch.utils.data.Dataset):
                         framesPath[i].append(os.path.join(clipsFolderPath, image))
                     elif image[-4:] == '.flo':
                         flowVectorsPath[i].append(os.path.join(clipsFolderPath, image))
+                    elif image[-4:] == '.yuv':
+                        continue
                     else:
                         raise(RuntimeError('Extra files in: ' + clipsFolderPath + '\n'))
                 if len(flowVectorsPath[i]) == 0:
@@ -74,10 +76,18 @@ class DataSet(torch.utils.data.Dataset):
                 frame = FRAME_TRANSFORM(frame.convert('RGB'))
                 sample.append(frame)
 
+        #TODO:
+        #Getting wrong floFrames
+        #the forward flo frames are at odd indeces [1,3,5,7,9,11,13,15]
+        #backwards flo are at even indeces [0,2,4,6,8,10,12,14]
+        #not sure what it should look like, but this is not it
+
         # get corresponding F_0_1 and F_1_0 to sample frames
         F_0_1_path = self.flowVectorsPath[index][firstFrame]
         F_1_0_path = self.flowVectorsPath[index][firstFrame + 4]
 
+        #TODO: 
+        #lines 98 & 99, the dimensions are [0,1,2] => [x/y,height,width], There is no dimension @ 3 to flip on
         # load as tensors, crop, flip
         F_0_1 = self.floToTensor(F_0_1_path)
         F_1_0 = self.floToTensor(F_1_0_path)
@@ -95,7 +105,7 @@ class DataSet(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.framesPath)
 
-    def floToTensor(floFile):
+    def floToTensor(self, floFile):
         dummy = np.fromfile(floFile, dtype=np.dtype(np.float32), count = 1, offset = 0)[0]
         width = np.fromfile(floFile, dtype=np.dtype(np.int32), count = 1, offset = 4)[0]
         height = np.fromfile(floFile, dtype=np.dtype(np.int32), count = 1, offset = 8)[0]
@@ -117,7 +127,7 @@ class DataSet(torch.utils.data.Dataset):
         floTensor = torch.cat((xTensor,yTensor),0)
         return floTensor
 
-    def yuvToRGBTensor(yuvFile):
+    def yuvToRGBTensor(self, yuvFile):
     # helper function to map U&V Values to the same size as the Y Tensor
         def mapColor(colorValues, width):
             colorTensor = torch.empty(0, dtype=torch.uint8)
@@ -263,7 +273,7 @@ class TrainRoutine():
 
                 F_t_0_f = interpolationRes[:, :2, :, :] + F_t_0
                 F_t_1_f = interpolationRes[:, 2:4, :, :] + F_t_1
-                V_t_0 = interpolationRes[:, 4, :, :]
+                V_t_0 = interpolationRes[:, 4:5, :, :]
                 V_t_1 = 1 - V_t_0
                     
                 g_I0_F_t_0_f = self.validationBackWarp(I0, F_t_0_f)
@@ -329,7 +339,7 @@ class TrainRoutine():
                 # extract optical flow residuals and visibility maps
                 F_t_0_f = interpolationRes[:, :2, :, :] + F_t_0
                 F_t_1_f = interpolationRes[:, 2:4, :, :] + F_t_1
-                V_t_0 = interpolationRes[:, 4, :, :]
+                V_t_0 = interpolationRes[:, 4:5, :, :]
                 V_t_1 = 1 - V_t_0
                 
                 # get intermediate frames from the intermediate flows
