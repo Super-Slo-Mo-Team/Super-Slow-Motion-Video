@@ -51,14 +51,16 @@ def main():
         videoFps = int(cv2.VideoCapture(os.path.join(VIDEO_DATASET_PATH, video)).get(cv2.CAP_PROP_FPS))
         framePath = os.path.join(TRAINING_TMP_PATH, videoName)
         os.mkdir(framePath)
-
+       
         retval = os.system(
-            "ffmpeg -i {} -vf 'scale={}:{},fps={}' -qscale:v 2 {}/%05d.jpg".format(
+            'ffmpeg -i {} -vf "scale={}:{},fps={}" -qscale:v 2 {}/input_{}x{}_%05d.jpg'.format(
                 os.path.join(VIDEO_DATASET_PATH, video),
                 IMAGE_DIM[0],
                 IMAGE_DIM[1],
                 videoFps,
-                framePath
+                framePath,
+                IMAGE_DIM[0],
+                IMAGE_DIM[1]
             )
         )
         if retval:
