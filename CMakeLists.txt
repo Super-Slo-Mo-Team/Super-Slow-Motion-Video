@@ -3,29 +3,56 @@ project(Super_Slow_Motion_Video)
 
 set(CMAKE_CXX_STANDARD 14)
 
-## configure Boost
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS serialization)
+#HERE 
 
-# configure ZeroMQ
-find_package(PkgConfig)
-pkg_check_modules(PC_ZeroMQ QUIET zmq)
-find_path(ZeroMQ_INCLUDE_DIR NAMES zmq.hpp PATHS ${PC_ZeroMQ_INCLUDE_DIRS})
-find_library(ZeroMQ_LIBRARY NAMES zmq zhelper.hpp PATHS ${PC_ZeroMQ_LIBRARY_DIRS})
+find_package(BOOST REQUIRED COMPONENTS serialization)
+set(BOOST_LIBRARIES ${BOOST_LIBRARIES} "C:\\Program Files\\boost\\boost_1_79_0\\stage\\lib\\libboost_serialization-vc143-mt-x64-1_79.lib")
+set(BOOST_INCLUDE ${BOOST_INCLUDE} "C:\\Program Files\\boost\\boost_1_79_0")
 
-# configure PyTorch
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "libtorch")
+
+message(STATUS "Boost version: ${Boost_VERSION}")  
+message(${BOOST_INCLUDE})
+message(${BOOST_LIBRARIES})
+message(${CMAKE_CXX_COMPILER_ID}) 
+
+add_library(BOOST_LIBRARY STATIC IMPORTED) # or STATIC instead of SHARED
+set_target_properties(BOOST_LIBRARY PROPERTIES
+  IMPORTED_LOCATION "${BOOST_LIBRARIES}"
+  INTERFACE_INCLUDE_DIRECTORIES "${BOOST_INCLUDE}"
+)
+
+
+
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:\\Repos\\vcpkg\\packages\\zeromq_x64-windows-static")
+find_package(ZeroMQ CONFIG REQUIRED)
+set(ZeroMQ_INCLUDE_DIR "${CMAKE_PREFIX_PATH}\\include")
+include_directories(${ZeroMQ_INCLUDE_DIR})
+set(ZeroMQ_LIBRARIES ${CMAKE_PREFIX_PATH}\\lib\\libzmq-mt-s-4_3_4.lib)
+message(${ZeroMQ_LIBRARIES}) 
+message(${ZeroMQ_INCLUDE_DIR}) 
+
+
+
+add_library(ZMQ_LIBRARY STATIC IMPORTED) # or STATIC instead of SHARED
+set_target_properties(ZMQ_LIBRARY PROPERTIES
+  IMPORTED_LOCATION "${ZeroMQ_LIBRARIES}"
+  INTERFACE_INCLUDE_DIRECTORIES "${ZeroMQ_INCLUDE_DIR}"
+)
+
+set(CUDNN_LIBRARY_PATH ${CUDNN_LIBRARY_PATH} "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.6\\bin")
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}  "C:\\Program Files\\libtorchRelease\\libtorch\\")
 find_package(Torch REQUIRED)
 
-# set cmake args
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
+
+# set cmake args
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+message(${CMAKE_CXX_FLAGS})
 ## set source files
 add_executable(Super_Slow_Motion_Video service/main.cpp service/model.cpp service/flowVectorFrame.cpp 
     service/flowVectorService.cpp service/slowMotionService.cpp service/videoProcessor.cpp)
 
 ## add include directories to compile and link directives
-include_directories(${Boost_INCLUDE_DIRS} ${ZeroMQ_INLCUDE_DIR})
-target_link_libraries(Super_Slow_Motion_Video ${Boost_LIBRARIES} ${ZeroMQ_LIBRARY} "${TORCH_LIBRARIES}")
+include_directories(${BOOST_INCLUDE} ${ZeroMQ_INLCUDE_DIR})
+#
+target_link_libraries(Super_Slow_Motion_Video BOOST_LIBRARY ZMQ_LIBRARY ${TORCH_LIBRARIES})
