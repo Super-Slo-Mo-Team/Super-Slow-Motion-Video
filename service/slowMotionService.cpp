@@ -3,7 +3,7 @@
 #include "model.cpp"
 #include "config.hpp"
 
-#include <zhelpers.hpp>
+#include "zhelpers.hpp"
 #include <torch/script.h>
 #include <iostream>
 

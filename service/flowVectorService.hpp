@@ -3,7 +3,8 @@
 
 #include "flowVectorFrame.hpp"
 
-#include <zmq.hpp>
+#define ZMQ_STATIC
+#include "zmq.hpp"
 #include <string>
 #include <memory>
 

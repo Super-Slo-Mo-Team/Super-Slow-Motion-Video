@@ -4,7 +4,8 @@
 #include "flowVectorFrame.hpp"
 #include "videoProcessor.hpp"
 
-#include <zmq.hpp>
+#define ZMQ_STATIC
+#include "zmq.hpp"
 #include <memory>
 
 using namespace std;
