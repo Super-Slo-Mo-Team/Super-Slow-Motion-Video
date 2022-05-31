@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <iostream>
+#include <direct.h>
 
 using namespace std;
 
@@ -36,7 +37,10 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // TODO: make all temp directories (ROOT_PATH, YUV_PATH, FLO_PATH, R_FRAME_PATH, I_FRAME_PATH)
+    // make all temp directories (ROOT_PATH, YUV_PATH, FLO_PATH)
+    _mkdir(ROOT_PATH);
+    _mkdir(YUV_PATH);
+    _mkdir(FLO_PATH);
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
@@ -50,7 +54,11 @@ int main(int argc, char* argv[]) {
     slowmoServiceThread.join();
     flowServiceThread.join();
 
-    // TODO: remove all temp directories
+    // remove all temp directories
+    // TODO: need to delete files first too
+    _rmdir(ROOT_PATH);
+    _rmdir(YUV_PATH);
+    _rmdir(FLO_PATH);
 
     return EXIT_SUCCESS;
 }
