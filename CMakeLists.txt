@@ -39,11 +39,21 @@ set_target_properties(ZMQ_LIBRARY PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${ZeroMQ_INCLUDE_DIR}"
 )
 
+#set(CUDA_TOOLKIT_ROOT_DIR ${CUDA_TOOLKIT_ROOT_DIR} "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.6\\")
 set(CUDNN_LIBRARY_PATH ${CUDNN_LIBRARY_PATH} "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.6\\bin")
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}  "C:\\Program Files\\libtorchRelease\\libtorch\\")
+#set(CUDNN_INCLUDE_DIR ${CUDNN_INCLUDE_DIR}"C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.6\\include")
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}  "C:\\Program Files\\libtorch\\") 
+set(TORCH_INCLUDE_DIR ${TORCH_INCLUDE_DIR} "C:\\Program Files\\libtorchRelease\\libtorch\\include")
 find_package(Torch REQUIRED)
 
 
+#add_library(TORCH_LIBRARY SHARED IMPORTED)
+#set_target_properties(TORCH_LIBRARY PROPERTIES
+    #IMPORTED_LOCATION "${TORCH_LIBRARIES}" 
+    #INTERFACE_INCLUDE_DIRECTORIES "${TORCH_INCLUDE_DIR}"
+#)
+message(${CUDNN_LIBRARY_PATH})
+message(${TORCH_LIBRARIES}) 
 
 # set cmake args
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -55,7 +65,17 @@ add_executable(Super_Slow_Motion_Video service/main.cpp service/model.cpp servic
 set_property(TARGET Super_Slow_Motion_Video PROPERTY
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+message(${TORCH_INSTALL_PREFIX})
+if (MSVC)
+    file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+    add_custom_command(TARGET Super_Slow_Motion_Video
+                 POST_BUILD
+                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                 ${TORCH_DLLS}
+                 $<TARGET_FILE_DIR:Super_Slow_Motion_Video>)
+endif (MSVC)
+
 ## add include directories to compile and link directives
-include_directories(${BOOST_INCLUDE} ${ZeroMQ_INCLUDE_DIR})
+include_directories(${BOOST_INCLUDE} ${ZeroMQ_INCLUDE_DIR} ${TORCH_INCLUDE_DIR})
 #
 target_link_libraries(Super_Slow_Motion_Video BOOST_LIBRARY ZMQ_LIBRARY ${TORCH_LIBRARIES} wsock32 ws2_32 Iphlpapi)
