@@ -105,7 +105,7 @@ void VideoProcessor::extractVideoFrames() {
 
                 // create output file path
                 stringstream pathBuilder;
-                pathBuilder << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameCounter << ".yuv";
+                pathBuilder << YUV_PATH << "/" <<"input_"<< videoWidth <<"x"<< videoHeight <<"_"<< setfill('0') << setw(MAX_FILE_DIGITS) << frameCounter << ".yuv";
                 string filename = pathBuilder.str();
 
                 // output file
@@ -165,8 +165,8 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
 
     stringstream pathBuilder1;
     stringstream pathBuilder2;
-    pathBuilder1 << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".yuv";
-    pathBuilder2 << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex + this->slowmoFactor << ".yuv";
+    pathBuilder1 << YUV_PATH << "/" << "input_" << videoWidth << "x" << videoHeight << "_"<< setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex << ".yuv";
+    pathBuilder2 << YUV_PATH << "/" << "input_" << videoWidth << "x" << videoHeight << "_" << setfill('0') << setw(MAX_FILE_DIGITS) << frameIndex + this->slowmoFactor << ".yuv";
     string path1 = pathBuilder1.str();
     string path2 = pathBuilder2.str();
 
