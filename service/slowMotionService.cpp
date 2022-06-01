@@ -6,7 +6,11 @@
 #include "zhelpers.hpp"
 #include <torch/script.h>
 #include <iostream>
+#include <stdlib.h> 
 
+#include <boost/filesystem.hpp>
+
+using namespace boost::filesystem;
 using namespace std;
 
 // singleton class instance
@@ -104,13 +108,12 @@ void SlowMotionService::startService() {
         stringstream msg(serializedMsg);
         boost::archive::binary_iarchive deserializer(msg);
         deserializer >> bufferFrame;
-
+      
         // wrong object received
         if (currFrameIndex / slowmoFactor != bufferFrame.getFrameIndex()) {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
-
         // create F_0_1 and F_1_0
         torch::Tensor F_0_1 = torch::cat(
             {
@@ -125,25 +128,23 @@ void SlowMotionService::startService() {
                 torch::from_blob(bufferFrame.getYFlowBack(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
             },
         1);
-        
+               
         F_0_1.to(device);
         F_1_0.to(device);
         
         // Get frames I0 and I1
-        vector<torch::Tensor> framePair = videoProcessor->getFramePair(currFrameIndex);
+        vector<torch::Tensor> framePair = videoProcessor->getFramePair(currFrameIndex);       
         torch::Tensor I0 = framePair[0].to(device);
         torch::Tensor I1 = framePair[1].to(device);
-
         // generate intermediate frames
         for(float i = 1; i != slowmoFactor; i++) {
             float t = float(i) / slowmoFactor;
-
             // calculate intermediate vector flows
             torch::Tensor F_t_0 = torch::add(((-t*(1-t)) * F_0_1), ((t*t) * F_1_0));
             torch::Tensor F_t_1 = torch::add((((1-t)*(1-t)) * F_0_1), ((-t*(1-t)) * F_1_0));
             F_t_0.to(device);
             F_t_1.to(device);
-
+            
             // bilinearly interpolate frames at current time step t from the input frames and optical flows
             std::vector<torch::jit::IValue> backWarpInput;
             backWarpInput.push_back(I0);
@@ -155,8 +156,8 @@ void SlowMotionService::startService() {
             torch::Tensor g_I1_F_t_1 = this->backWarpModel.forward(backWarpInput).toTensor();
             backWarpInput.clear();
             g_I0_F_t_0.to(device);
-            g_I1_F_t_1.to(device);
-
+            g_I1_F_t_1.to(device); 
+            
             // refine interpolation and generate soft visibility maps
             // TODO: do these need to be concatenated then placed as a single tensor into the vector??
             // std::vector<torch::jit::IValue> interpolationInput;
@@ -194,11 +195,11 @@ void SlowMotionService::startService() {
             // fuse warped images to create an interpolated frame
             // torch::Tensor Ft_p = (wCoeff0 * V_t_0 * g_I0_F_t_0_f + wCoeff1 * V_t_1 * g_I1_F_t_1_f ) / (wCoeff0 * V_t_0 + wCoeff1 * V_t_1);
             torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
-
+            
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
 
             stringstream pathBuilder;
-            pathBuilder << YUV_PATH << "/" << setfill('0') << setw(MAX_FILE_DIGITS) << currFrameIndex + int(i) << ".yuv";
+            pathBuilder << YUV_PATH << "/" << "input_" << videoProcessor->getVideoWidth() << "x" << videoProcessor->getVideoHeight() << "_" << setfill('0') << setw(MAX_FILE_DIGITS) << currFrameIndex + int(i) << ".yuv";
             string imgName = pathBuilder.str();
 
             ofstream writeOut(imgName,ofstream::binary);
@@ -211,6 +212,38 @@ void SlowMotionService::startService() {
     // send termination request
     s_send(flowRequester, to_string(TERMINATION_MSG));
 
+    stringstream out;
+    out << OUT_PATH << "\\tmp.yuv";
+    string tempOut = out.str();
+
+    ofstream writeOut(tempOut, ofstream::binary | std::ios::app);
+    for (directory_entry& entry : directory_iterator(YUV_PATH)) {
+        string filename = entry.path().string();
+        cout << "Writing: " << filename << endl;
+        char* memblock;
+        streampos size;
+        ifstream ifs(filename, ios::binary | ios::ate);
+        if (ifs.is_open()) {
+            size = ifs.tellg();
+            memblock = new char[size];
+            ifs.seekg(0, ios::beg);
+            ifs.read(memblock, size);
+            ifs.close();
+
+            writeOut.write(memblock, size);
+        }
+        else {
+            cout << "Could not open" << filename << endl;
+        }
+    }
+    writeOut.close();
+
+    stringstream ffmpegCommand;
+    ffmpegCommand << "ffmpeg -hide_banner -loglevel error -f rawvideo -pix_fmt yuv420p -s:v " << videoProcessor->getVideoWidth() << "x" << videoProcessor->getVideoHeight() << " -r " << this->outputFps << " -i " << tempOut << " -c:v libx264 " << this->outputPath;
+    string cmd = ffmpegCommand.str();
+
+    system(cmd.c_str());
+    cout << "Video Has Been Generated" << endl;
     // TODO: reconstruct video
 
 }

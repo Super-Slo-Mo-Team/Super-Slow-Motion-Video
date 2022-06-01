@@ -2,11 +2,17 @@
 #include "flowVectorService.hpp"
 #include "slowMotionService.hpp"
 
+
 #include <thread>
 #include <iostream>
 #include <direct.h>
+#include <fstream>
+//#include <windows.h>
+#include <sstream>
+#include <boost/filesystem.hpp>
 
-using namespace std;
+using namespace boost::filesystem;
+
 
 int main(int argc, char* argv[]) {
     if (argc != 5) {
@@ -14,6 +20,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    //cout << current_path() << endl;
     // check input arguments
     string inputPath = argv[1];
     string outputPath = argv[2];
@@ -40,21 +47,30 @@ int main(int argc, char* argv[]) {
     // make all temp directories (ROOT_PATH, YUV_PATH, FLO_PATH)
     _mkdir(ROOT_PATH);
     _mkdir(YUV_PATH);
+    _mkdir(OUT_PATH);
     _mkdir(FLO_PATH);
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
     SlowMotionService *sms = SlowMotionService::GetInstance(inputPath, slowmoFactor, outputFps, outputPath);
+    
+    stringstream cudaCommand;
+    cudaCommand << CUDA_EXEC << "--input=" << YUV_PATH << "\\*.yuv " << "--output=" << FLO_PATH << "\\";
+    string cudaString = cudaCommand.str();
 
+    system(cudaString.c_str());
+   
+    
     // create threads with appropriate entry points
     thread flowServiceThread(&FlowVectorService::startService, &*fvs);
     thread slowmoServiceThread(&SlowMotionService::startService, &*sms);
     
+
     // terminate program upon completion
     slowmoServiceThread.join();
     flowServiceThread.join();
-
-    // remove all temp directories
+    
+     // remove all temp directories
     // TODO: need to delete files first too
     _rmdir(ROOT_PATH);
     _rmdir(YUV_PATH);
@@ -62,3 +78,4 @@ int main(int argc, char* argv[]) {
 
     return EXIT_SUCCESS;
 }
+

@@ -135,7 +135,8 @@ class BackWarp(torch.nn.Module):
         super(BackWarp, self).__init__()
         self.width = dim[0]
         self.height = dim[1]
-        
+        self.device = device
+
         # create a grid (require torch 1.10.2)
         self.xGrid, self.yGrid = torch.meshgrid(torch.arange(0, self.width, 1),torch.arange(0, self.height, 1), indexing="xy")
        
@@ -148,20 +149,22 @@ class BackWarp(torch.nn.Module):
     def forward(self, frame, F_t):
         # get xFlow and yFlow tensors
         
+
         xFlow_t = F_t[:, 0, :, :]
         yFlow_t = F_t[:, 1, :, :]
-        
+        xFlow_t = xFlow_t.to(self.device)
+        yFlow_t = yFlow_t.to(self.device)
         # calculate xGridFlow and yGridFlow
+        
         xGridFlow = self.xGrid.unsqueeze(0).expand_as(xFlow_t).float() + xFlow_t
         yGridFlow = self.yGrid.unsqueeze(0).expand_as(yFlow_t).float() + yFlow_t
-
+        
         # normalize
         xGridFlow = 2 * (xGridFlow / self.width - 0.5)
         yGridFlow = 2 * (yGridFlow / self.height - 0.5)
 
         # stack and bilinear interpolation
         frameGrid = torch.stack((xGridFlow, yGridFlow), dim = 3)
-
         return torch.nn.functional.grid_sample(frame, frameGrid, align_corners=False)
 
 def main():
@@ -176,7 +179,7 @@ def main():
         torch.jit.script(interpolationModel).save('../model/checkpoints/traced_interpolation_model.pt')
     elif args.model == 'BackWarp':
         backWarp = BackWarp((args.width, args.height), torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
-        torch.jit.script(backWarp).save('../model/checkpoints/traced_backwarp_model.pt')
+        torch.jit.script(backWarp).save('..\\..\\..\\model\\checkpoints\\traced_backwarp_model.pt')
     else:
         print ('Invalid model arg. Exiting.')
 

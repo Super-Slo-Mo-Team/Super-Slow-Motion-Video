@@ -1,15 +1,21 @@
 cmake_minimum_required(VERSION 3.21)
 project(Super_Slow_Motion_Video)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 14) 
 
 #HERE 
 
-find_package(BOOST REQUIRED COMPONENTS serialization)
+find_package(BOOST REQUIRED COMPONENTS serialization filesystem)
 set(BOOST_LIBRARIES ${BOOST_LIBRARIES} "C:\\Program Files\\boost\\boost_1_79_0\\stage\\lib\\libboost_serialization-vc143-mt-s-x64-1_79.lib")
+set(FILESYSTEM ${FILESYSTEM} "C:\\Program Files\\boost\\boost_1_79_0\\stage\\lib\\libboost_filesystem-vc143-mt-s-x64-1_79.lib")
 set(BOOST_INCLUDE ${BOOST_INCLUDE} "C:\\Program Files\\boost\\boost_1_79_0")
 
 
+add_library(FILE_LIBRARY STATIC IMPORTED) # or STATIC instead of SHARED 
+set_target_properties(FILE_LIBRARY PROPERTIES
+  IMPORTED_LOCATION "${FILESYSTEM}"
+  INTERFACE_INCLUDE_DIRECTORIES "${BOOST_INCLUDE}"
+)
 message(STATUS "Boost version: ${Boost_VERSION}")  
 message(${BOOST_INCLUDE})
 message(${BOOST_LIBRARIES})
@@ -46,12 +52,6 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}  "C:\\Program Files\\libtorch\\")
 set(TORCH_INCLUDE_DIR ${TORCH_INCLUDE_DIR} "C:\\Program Files\\libtorchRelease\\libtorch\\include")
 find_package(Torch REQUIRED)
 
-
-#add_library(TORCH_LIBRARY SHARED IMPORTED)
-#set_target_properties(TORCH_LIBRARY PROPERTIES
-    #IMPORTED_LOCATION "${TORCH_LIBRARIES}" 
-    #INTERFACE_INCLUDE_DIRECTORIES "${TORCH_INCLUDE_DIR}"
-#)
 message(${CUDNN_LIBRARY_PATH})
 message(${TORCH_LIBRARIES}) 
 
@@ -78,4 +78,4 @@ endif (MSVC)
 ## add include directories to compile and link directives
 include_directories(${BOOST_INCLUDE} ${ZeroMQ_INCLUDE_DIR} ${TORCH_INCLUDE_DIR})
 #
-target_link_libraries(Super_Slow_Motion_Video BOOST_LIBRARY ZMQ_LIBRARY ${TORCH_LIBRARIES} wsock32 ws2_32 Iphlpapi)
+target_link_libraries(Super_Slow_Motion_Video BOOST_LIBRARY ZMQ_LIBRARY FILE_LIBRARY ${TORCH_LIBRARIES} wsock32 ws2_32 Iphlpapi)

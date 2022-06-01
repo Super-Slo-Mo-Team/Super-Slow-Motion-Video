@@ -321,14 +321,14 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
  */
 vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     img.squeeze_();
-
+    
     auto R = img[0];
     auto G = img[1];
     auto B = img[2];
     R = R.to(torch::kFloat64);
     G = G.to(torch::kFloat64);
     B = B.to(torch::kFloat64);
-   
+    
     torch::Tensor Y = 0.299*R + 0.586996*G + 0.114*B;
     torch::Tensor U = -0.16874*R - 0.331264*G + 0.49999*B + 128.0;
     torch::Tensor V = 0.49999*R - 0.41869*G - 0.08131*B + 128.0;
@@ -336,15 +336,18 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     Y = torch::clamp(Y, 0, 255);
     U = torch::clamp(U, 0, 255);
     V = torch::clamp(V, 0, 255);
-
+   
     //came in as signed, converting them back for consistency
     Y = Y.to(torch::kInt8);
     U = U.to(torch::kInt8);
     V = V.to(torch::kInt8);
 
     Y = Y.contiguous();
+    Y = Y.to(torch::kCPU);
+    U = U.to(torch::kCPU);
+    V = V.to(torch::kCPU);
     std::vector<int8_t> vectorY(Y.data_ptr<int8_t>(), Y.data_ptr<int8_t>() + Y.numel());
-    
+
     std::vector<char> vectorU = this->resizeColorVector(U);
     std::vector<char> vectorV = this->resizeColorVector(V);
     vectorY.insert(vectorY.end(), vectorU.begin(), vectorU.end());
