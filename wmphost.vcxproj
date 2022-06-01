@@ -726,7 +726,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;WINVER=0x0A00;MY_SOLUTIONDIR=R"?($(SolutionDir))?";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;WINVER=0x0A00;MY_SOLUTIONDIR=R"?($(SolutionDir))?";_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>.\Debug/wmphost.pch</PrecompiledHeaderOutputFile>
@@ -760,6 +760,7 @@
   <ItemGroup>
     <ClCompile Include="CWMPEventDispatch.cpp" />
     <ClCompile Include="CWMPHost.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="wmphost.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -774,6 +775,12 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="slomoIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="a.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
