@@ -36,7 +36,7 @@ FRAME_TRANSFORM = transforms.Compose([  # transformation to apply to images from
 
 # Training Macros
 
-NUM_EPOCHS = 200                        # number of epochs to train
+NUM_EPOCHS = 100                        # number of epochs to train
 TRAIN_BATCH_SIZE = 6                    # batch size for training
 VALIDATION_BATCH_SIZE = 10              # batch size for validation
 LEARNING_RATE = 0.0001                  # initial learning rate
