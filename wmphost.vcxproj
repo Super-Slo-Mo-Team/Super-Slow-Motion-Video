@@ -726,7 +726,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;WINVER=0x0A00;MY_SOLUTIONDIR=R"?($(SolutionDir))?";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;WINVER=0x0A00;MY_SOLUTIONDIR=R"?($(SolutionDir))?";_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>.\Debug/wmphost.pch</PrecompiledHeaderOutputFile>
@@ -743,7 +743,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/wmphost.pdb</ProgramDatabaseFile>
@@ -760,6 +760,7 @@
   <ItemGroup>
     <ClCompile Include="CWMPEventDispatch.cpp" />
     <ClCompile Include="CWMPHost.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="wmphost.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -771,6 +772,15 @@
     <ClInclude Include="dialogs.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StdAfx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="slomoIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="a.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
