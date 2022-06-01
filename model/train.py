@@ -76,25 +76,17 @@ class DataSet(torch.utils.data.Dataset):
                 frame = FRAME_TRANSFORM(frame.convert('RGB'))
                 sample.append(frame)
 
-        #TODO:
-        #Getting wrong floFrames
-        #the forward flo frames are at odd indeces [1,3,5,7,9,11,13,15]
-        #backwards flo are at even indeces [0,2,4,6,8,10,12,14]
-        #not sure what it should look like, but this is not it
-
         # get corresponding F_0_1 and F_1_0 to sample frames
-        F_0_1_path = self.flowVectorsPath[index][firstFrame]
-        F_1_0_path = self.flowVectorsPath[index][firstFrame + 4]
+        F_0_1_path = self.flowVectorsPath[index][2 * firstFrame + 1]
+        F_1_0_path = self.flowVectorsPath[index][2 * firstFrame]
 
-        #TODO: 
-        #lines 98 & 99, the dimensions are [0,1,2] => [x/y,height,width], There is no dimension @ 3 to flip on
         # load as tensors, crop, flip
         F_0_1 = self.floToTensor(F_0_1_path)
         F_1_0 = self.floToTensor(F_1_0_path)
         F_0_1 = torchvision.transforms.functional.crop(F_0_1, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
         F_1_0 = torchvision.transforms.functional.crop(F_1_0, cropArea[0], cropArea[1], cropArea[2], cropArea[3])
-        F_0_1 = torch.flip(F_0_1, [3]) if randomFrameFlip else F_0_1
-        F_1_0 = torch.flip(F_1_0, [3]) if randomFrameFlip else F_1_0
+        F_0_1 = torch.flip(F_0_1, [2]) if randomFrameFlip else F_0_1
+        F_1_0 = torch.flip(F_1_0, [2]) if randomFrameFlip else F_1_0
 
         # append flow vectors to the end of sample
         sample.append(F_0_1)
@@ -389,8 +381,8 @@ class TrainRoutine():
                     'state_dict' : self.interpolationModel.state_dict()
                 }
 
-                torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(checkpoint_counter) + '.ckpt')
-                checkpoint_counter += 1
+                torch.save(interpolationDict, TRAINING_CHECKPOINT_PATH + '/epoch_' + str(self.checkpoint_counter) + '.ckpt')
+                self.checkpoint_counter += 1
 
 def main():
     mainTrainRoutine = TrainRoutine()
