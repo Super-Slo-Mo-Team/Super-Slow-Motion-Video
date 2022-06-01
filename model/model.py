@@ -28,8 +28,6 @@ class UNet(torch.nn.Module):
         self.c11 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c12 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
 
-        # TODO: do we have to acommodate skip connections? c14, 16, 18, 20, and 22 would do input /= 2
-
         ### Decoder Layers ###
         self.c13 = torch.nn.Conv2d(512, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.c14 = torch.nn.Conv2d(1024, 512, kernel_size = 3, stride = 1, padding = 1, bias = False)
@@ -121,8 +119,6 @@ class UNet(torch.nn.Module):
         x = torch.cat((x, skp1), 1)
         x = self.c22(x)
         x = self.leaky_relu(x)
-
-        # TODO: check order of leaky_relu and sigmoid
 
         x = self.c23(x)
         x1 = self.leaky_relu(x[:, :4, :, :])
