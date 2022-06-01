@@ -27,7 +27,7 @@ public:
         //MESSAGE_HANDLER(WM_CONTEXTMENU, FowardMsgToWMP)
         COMMAND_ID_HANDLER(ID_FILE_OPEN, OnFileOpen)
         COMMAND_ID_HANDLER(ID_APP_EXIT, OnFileExit)
-        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        //MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 
         COMMAND_ID_HANDLER(ID_WMPCORE_CLOSE, OnWMPCoreClose)
         COMMAND_ID_HANDLER(ID_WMPCORE_URL, OnWMPCoreURL)
@@ -61,7 +61,7 @@ public:
         COMMAND_ID_HANDLER(ID_4xOption, fourxOption)
         COMMAND_ID_HANDLER(ID_PLAYSLOMO, PlaySlomo)
         COMMAND_ID_HANDLER(ID_TRIMVIDEO, TrimVideo)
-        MESSAGE_HANDLER(WM_COMMAND, OpenModal)
+        MESSAGE_HANDLER(WM_COMMAND, handle_object_messaages)
 
     END_MSG_MAP()
 
@@ -99,10 +99,10 @@ public:
     LRESULT fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnFullScreen(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
-    LRESULT OpenModal(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
+    LRESULT handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
     LRESULT registerPopupClass(HINSTANCE hInst);
     LRESULT displayPopup(HWND hwnd);
-    BOOL OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
+    LRESULT OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
 
     BSTR extract_filename(BSTR path);
 
@@ -119,6 +119,9 @@ public:
     HWND                        video_player2_title;
     HWND                        console_display;
     HWND                        open_modal;
+    HWND                        updown_box;
+    HWND                        updown_control;
+    HWND                        updown_background;
     HWND                        trim1;
     HWND                        trim2;
     HWND                        popUp_hWnd;

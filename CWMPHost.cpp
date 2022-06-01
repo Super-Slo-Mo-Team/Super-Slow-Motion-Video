@@ -11,12 +11,17 @@
 #include <vector>
 #include <stdlib.h>
 #include <io.h>
-
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
 #include "atlbase.h"
 #include "atlstr.h"
 #include "comutil.h"
 #include <filesystem>
-
+#include <stdio.h>
+#include <strsafe.h>
 #pragma region Includes and Manifest Dependencies
 #include <stdio.h>
 #include <windows.h>
@@ -35,6 +40,7 @@
 #pragma comment(lib, "Comctl32.lib")
 #pragma comment(lib, "Uxtheme.lib")
 #pragma comment(lib, "Dwmapi.lib")
+#pragma warning(suppress : 4996)
 
 
 // Enable Visual Style
@@ -48,6 +54,9 @@
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 #pragma endregion
+#define IDC_EDIT		2990
+#define IDC_UPDOWN		2991
+#define IDC_OK          2992
 
 BSTR selected_folder_macro;
 BSTR SELECTED_VIDEO_MACRO; //name and path
@@ -61,6 +70,21 @@ int LINES = 0;
 static HFONT s_hFont = NULL;
 
 /////////////////////////////// Forward Declarations //////////////////////////////////////////////
+
+#define BUFSIZE 4096 
+
+HANDLE g_hChildStd_IN_Rd = NULL;
+HANDLE g_hChildStd_IN_Wr = NULL;
+HANDLE g_hChildStd_OUT_Rd = NULL;
+HANDLE g_hChildStd_OUT_Wr = NULL;
+
+HANDLE g_hInputFile = NULL;
+
+void CreateChildProcess(void);
+void WriteToPipe(void);
+void ReadFromPipe(void);
+void ErrorExit(PTSTR);
+
 LRESULT CALLBACK PopupProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -93,65 +117,7 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
      //DWORD dwStyle = WS_POPUPWINDOW;
     CFolderPickerDialog dlgOpen;
     //HRESULT      hr;
-
-    if (dlgOpen.DoModal(m_hWnd) == IDOK)
-    {
-        /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
-        if (FAILMSG(hr))
-            return 0;*/
-        selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
-        OutputDebugString(L"\n\n");
-
-        OutputDebugString(selected_folder_macro);
-        OutputDebugString(L"\n\n");
-    }
-    m_dwAdviseCookie = 0;
     GetClientRect(&rcClient);
-    WNDCLASS wc{};
-    wc.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
-    wc.lpszClassName = L"scroll_window";
-    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = CreateSolidBrush(RGB(46, 42, 45));
-    wc.lpfnWndProc = ConsoleProc;
-    RegisterClass(&wc);
-    console_display = CreateWindow(L"scroll_window", L"", WS_OVERLAPPED | WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-        200, 200, (LONG)(.4 * (rcClient.right - rcClient.left)), (LONG)(.4 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-        m_hWnd,
-        NULL,
-        NULL,
-        NULL);
-    for (int i = 0; i < 30; i++) {
-        console_output.push_back(L"Hello");
-    }
-
-   console_output.push_back(L"Select a video to slowdown");
-   LINES = (int)(console_output.size());
-   SendMessage(console_display, WM_PAINT, NULL, NULL);
-   SendMessage(console_display, WM_SIZE, NULL, NULL);
-
-
-
-   WNDCLASS wc_title1{};
-   wc_title1.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
-   wc_title1.lpszClassName = L"title_1";
-   wc_title1.hCursor = LoadCursor(nullptr, IDC_ARROW);
-   wc_title1.hbrBackground = (HBRUSH)COLOR_WINDOW;
-   wc_title1.lpfnWndProc = titleTwo;
-   RegisterClass(&wc_title1);
-   video_player1_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-       (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-       m_hWnd,
-       NULL,
-       NULL,
-       NULL);
-   
-   video_player2_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE| WS_BORDER | ES_AUTOHSCROLL,
-       (LONG)((.1)*rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-       m_hWnd,
-       NULL,
-       NULL,
-       NULL);
-
     LONG rcWidth = rcClient.right - rcClient.left;
     LONG rcHeight = rcClient.bottom - rcClient.top;
     // create window
@@ -181,12 +147,114 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
     HBRUSH menu_brush = CreateSolidBrush(RGB(167, 173, 186)); //create brush
     MENUINFO mi = { 0 };
     mi.cbSize = sizeof(mi);
-    mi.fMask = MIM_BACKGROUND ;
+    mi.fMask = MIM_BACKGROUND;
     mi.hbrBack = menu_brush;
     if (IsMenu(hMenu))
     {
         SetMenuInfo(hMenu, &mi);
     }
+
+    if (dlgOpen.DoModal(m_hWnd) == IDOK)
+    {
+        /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+        if (FAILMSG(hr))
+            return 0;*/
+        selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
+        OutputDebugString(L"\n\n");
+
+        OutputDebugString(selected_folder_macro);
+        OutputDebugString(L"\n\n");
+    }
+    m_dwAdviseCookie = 0;
+
+    HINSTANCE g_hInst = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
+ 
+    // Load and register Updown control class
+    INITCOMMONCONTROLSEX iccx;
+    iccx.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    iccx.dwICC = ICC_UPDOWN_CLASS;
+    if (!InitCommonControlsEx(&iccx))
+        return FALSE;
+
+    // Create an Edit control
+    RECT rc = { 240, 0, 200, 48 };
+    updown_box = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", 0,
+        WS_CHILD | WS_VISIBLE, rc.left, rc.top, rc.right, rc.bottom,
+        m_hWnd, (HMENU)IDC_EDIT, g_hInst, 0);
+
+    // Create the ComboBoxEx control
+    SetRect(&rc, 40, 160, 360, 40);
+    updown_control = CreateWindowEx(0, UPDOWN_CLASS, 0,
+        UDS_ALIGNRIGHT | UDS_SETBUDDYINT | UDS_WRAP | WS_CHILD | WS_VISIBLE,
+        rc.left, rc.top, rc.right, rc.bottom,
+        m_hWnd, (HMENU)IDC_UPDOWN, g_hInst, 0);
+    HFONT hFont = CreateFont(40, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
+    SendMessage(updown_box, WM_SETFONT, WPARAM(hFont), TRUE);
+
+
+    open_modal = CreateWindow(
+        L"BUTTON",  // Predefined class; Unicode assumed 
+        L"Slow Down Video",      // Button text 
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+        modalLeft + 10,         // x position 
+        modalTop + 400,         // y position 
+        120,        // Button width
+        120,        // Button height
+        m_hWnd,     // Parent window
+        NULL,       // No menu.
+        (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
+        NULL);
+    // Explicitly attach the Updown control to its 'buddy' edit control
+    SendMessage(updown_control, UDM_SETBUDDY, (WPARAM)updown_box, 0);
+    WNDCLASS wc{};
+    wc.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
+    wc.lpszClassName = L"scroll_window";
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hbrBackground = CreateSolidBrush(RGB(46, 42, 45));
+    wc.lpfnWndProc = ConsoleProc;
+    RegisterClass(&wc);
+    console_display = CreateWindow(L"scroll_window", L"", WS_OVERLAPPED | WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        200, 200, (LONG)(.4 * (rcClient.right - rcClient.left)), (LONG)(.4 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+        m_hWnd,
+        NULL,
+        NULL,
+        NULL);
+
+   console_output.push_back(L"Select a video to slowdown");
+   LINES = (int)(console_output.size());
+   SendMessage(console_display, WM_PAINT, NULL, NULL);
+   SendMessage(console_display, WM_SIZE, NULL, NULL);
+   
+
+
+
+   WNDCLASS wc_title1{};
+   wc_title1.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
+   wc_title1.lpszClassName = L"title_1";
+   wc_title1.hCursor = LoadCursor(nullptr, IDC_ARROW);
+   wc_title1.hbrBackground = (HBRUSH)COLOR_WINDOW;
+   wc_title1.lpfnWndProc = titleTwo;
+   RegisterClass(&wc_title1);
+   video_player1_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+       (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+       m_hWnd,
+       NULL,
+       NULL,
+       NULL);
+
+   updown_background = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+       (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+       m_hWnd,
+       NULL,
+       NULL,
+       NULL);
+   video_player2_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE| WS_BORDER | ES_AUTOHSCROLL,
+       (LONG)((.1)*rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+       m_hWnd,
+       NULL,
+       NULL,
+       NULL);
+
    
     
     trim1 = CreateWindow(
@@ -214,18 +282,6 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
         NULL);
    
-    open_modal = CreateWindow(
-        L"BUTTON",  // Predefined class; Unicode assumed 
-        L"Slow Down Video",      // Button text 
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
-        modalLeft + 10,         // x position 
-        modalTop + 400,         // y position 
-        120,        // Button width
-        120,        // Button height
-        m_hWnd,     // Parent window
-        NULL,       // No menu.
-        (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
-        NULL);
     const TCHAR* fontName = _T("Croobie");
     const long nFontSize = 10;
 
@@ -384,6 +440,8 @@ LRESULT CWMPHost::OnErase(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam
 LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
 {
     RECT size_rcClient;
+    RECT rect;
+
     GetClientRect(&size_rcClient);
 
     LONG size_rcWidth = size_rcClient.right - size_rcClient.left;
@@ -399,8 +457,8 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     LONG widthPlayer2 = (LONG)(size_rcWidth * .48);
     LONG heightPlayer2 = (LONG)(size_rcHeight * .48);
 
-    LONG xModal3 = (LONG)(.44 * size_rcWidth);
-    LONG yModal3 = (LONG)(0.65 * size_rcHeight);
+    LONG xModal3 = (LONG)(.47 * size_rcWidth);
+    LONG yModal3 = (LONG)(0.80 * size_rcHeight);
     LONG widthModal3 = (LONG)(size_rcWidth * .115);
     LONG heightModal3 = (LONG)(widthModal3/1.5);
     
@@ -418,10 +476,29 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     LONG widthModal8 = (LONG)(size_rcWidth * .40);
     LONG heightModal8 = (LONG)(widthModal8/1.8);
  
+    LONG xModal_updown_box = (LONG)(.47 * size_rcWidth);
+    LONG yModal_updown_box = (LONG)(0.65 * size_rcHeight);
+    LONG widthModal_updown_box = (LONG)(size_rcWidth * .13);
+    LONG heightModal_updown_box = (LONG)(widthModal3 / 3);
 
+    LONG xModal_updown_control = (LONG)(.60* size_rcWidth);
+    LONG yModal_updown_control = (LONG)(0.65 * size_rcHeight);
+    LONG widthModal_updown_control = (LONG)(size_rcWidth * .02);
+    LONG heightModal_updown_control = heightModal_updown_box;
+
+    LONG xModal_updown_background = (LONG)(0.44 * size_rcWidth);
+    LONG yModal_updown_background = (LONG)(0.58 * size_rcHeight);
+    LONG widthModal_updown_background = (LONG)(size_rcWidth * .20);
+    LONG heightModal_updown_background = widthModal_updown_background;
+    
     m_wndView.MoveWindow(xPlayer1, yPlayer1, widthPlayer1, heightPlayer1, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     m_wndView2.MoveWindow(xPlayer2, yPlayer2, widthPlayer2, heightPlayer2, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(open_modal,xModal3,yModal3,widthModal3, heightModal3, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+   // ::MoveWindow(updown_background, xModal_updown_background, yModal_updown_background, widthModal_updown_background, heightModal_updown_background, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::MoveWindow(updown_background, xModal_updown_background, yModal_updown_background, widthModal_updown_background, heightModal_updown_background, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::MoveWindow(updown_box, xModal_updown_box, yModal_updown_box, widthModal_updown_box, heightModal_updown_box, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::MoveWindow(updown_control, xModal_updown_control, yModal_updown_control, widthModal_updown_control, heightModal_updown_control, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
     ::MoveWindow(trim1, xModal4, yModal4, widthModal4, heightModal4, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(trim2, xModal5, yModal5, widthModal4, heightModal4, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(video_player1_title, (LONG)((.1) * size_rcClient.right - size_rcClient.left),
@@ -433,11 +510,8 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     ::MoveWindow(console_display, xModal8, yModal8, widthModal8, heightModal8, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     RECT movedRect = { xModal8, yModal8, widthModal8, heightModal8 };
     ::RedrawWindow(console_display, &movedRect, 0, RDW_INVALIDATE | RDW_FRAME);
-
-
-
+   
     HBRUSH brush = CreateSolidBrush(RGB(79, 91, 102)); //create brush
-    RECT rect;
 
     int w_length = (int)(wcslen(L"Input Video"));
     // Write a line of text to the client area.
@@ -474,7 +548,17 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     SetBkMode(OutputVideoDC, TRANSPARENT);
     TextOut(OutputVideoDC, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
         L"Output Video", static_cast<int> (w_length));
+    HDC bacgrounddc = ::GetDC(updown_background);
+    HBRUSH background_brush = CreateSolidBrush(RGB(79, 91, 102)); //create brush
 
+    SelectObject(bacgrounddc, background_brush); //select brush into DC
+    Rectangle(bacgrounddc, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
+
+    SetTextColor(bacgrounddc, 0x00FFFFFF);
+
+    //::GetClientRect(updown_background, &rect);
+    SetBkMode(bacgrounddc, TRANSPARENT);
+    TextOut(bacgrounddc, 0, 0, L"Select Slowdown Factor", static_cast<int> (wcslen(L"Select Slowdown Factor")));
     return 0;
 }
 
@@ -1010,8 +1094,6 @@ LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hW
     return 0;
 }
 
-
-
 LRESULT CWMPHost::twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     SELECTED_SLOWDOWN_MACRO = L"2";
     return 0;
@@ -1062,6 +1144,46 @@ LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
     return 0;
 
 }
+LRESULT background_proc(HWND hwnd, UINT Umsg, WPARAM, LPARAM)
+{
+    HDC hdc;
+    PAINTSTRUCT ps;
+    switch (Umsg) {
+    case WM_CREATE:
+        // Get the handle to the client area's device context. 
+        hdc = GetDC(hwnd);
+
+        // Extract font dimensions from the text metrics. 
+
+        // Free the device context. 
+        ReleaseDC(hwnd, hdc);
+
+        // Set an arbitrary maximum width for client area. 
+        // (xClientMax is the sum of the widths of 48 average 
+        // lowercase letters and 12 uppercase letters.) 
+
+        return 0;
+
+    case WM_SIZE:
+
+        // Retrieve the dimensions of the client area. 
+      
+        return 0;
+
+    case WM_PAINT:
+
+        // Prepare the window for painting.
+        hdc = BeginPaint(hwnd, &ps);
+        // Indicate that painting is finished.
+        EndPaint(hwnd, &ps);
+        return 0;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+    return 0;
+}
 LRESULT CALLBACK PopupProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CLOSE:
@@ -1095,20 +1217,13 @@ LRESULT CWMPHost::displayPopup(HWND hWnd) {
     return 0;
 }
 
-LRESULT CWMPHost::OpenModal(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled)
+LRESULT CWMPHost::handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled)
 {
+
     if ((HWND)lParam == open_modal)
     {
-        HINSTANCE g_inst = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
-        hDlg = CreateDialog(g_inst,
-            MAKEINTRESOURCE(IDD_UPDOWNDIALOG),
-            m_hWnd, UpdownDlgProc);
-        if (hDlg)
-        {
-            ::ShowWindow(hDlg, SW_SHOW);
-        }
-
-
+        
+        OnUpDownOk(m_hWnd, NULL, NULL, NULL);
     }
     if ((HWND)lParam == trim1)
     {
@@ -1229,64 +1344,26 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID , HWND /* hWndCtl 
     ShellExecute(NULL, _T("open"),_T("cmd.exe"), final_result, NULL, SW_SHOW);
     return 0;
 }
-BOOL CWMPHost::OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
-{
-    return TRUE;
-}
+//BOOL CWMPHost::OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
+//{
+ //   return TRUE;
+//}
 LRESULT OnClose(HWND hWnd)
 {
     EndDialog(hWnd, 0);
     return 0;
 }
 
-#pragma region Updown
+//#pragma region Updown
 // MSDN: Up-Down Control
 // http://msdn.microsoft.com/en-us/library/bb759880.aspx
 
-#define IDC_EDIT		2990
-#define IDC_UPDOWN		2991
-#define IDC_OK          2992
 
 //
 //   FUNCTION: OnInitUpdownDialog(HWND, HWND, LPARAM)
 //
 //   PURPOSE: Process the WM_INITDIALOG message
 //
-HWND hUpdown, hEdit;
-BOOL OnInitUpdownDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
-{
-    HINSTANCE g_hInst = (HINSTANCE)(::GetWindowLongPtr(hWnd, GWLP_HINSTANCE));
-    lParam = NULL;
-    hWndFocus = NULL;
-    // Load and register Updown control class
-    INITCOMMONCONTROLSEX iccx;
-    iccx.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    iccx.dwICC = ICC_UPDOWN_CLASS;
-    if (!InitCommonControlsEx(&iccx))
-        return FALSE;
-
-    // Create an Edit control
-    RECT rc = { 40, 120, 200, 48 };
-    hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", 0,
-        WS_CHILD | WS_VISIBLE, rc.left, rc.top, rc.right, rc.bottom,
-        hWnd, (HMENU)IDC_EDIT, g_hInst, 0);
-
-    // Create the ComboBoxEx control
-    SetRect(&rc, 40, 160, 360, 40);
-    hUpdown = CreateWindowEx(0, UPDOWN_CLASS, 0,
-        UDS_ALIGNRIGHT | UDS_SETBUDDYINT | UDS_WRAP | WS_CHILD | WS_VISIBLE,
-        rc.left, rc.top, rc.right, rc.bottom,
-        hWnd, (HMENU)IDC_UPDOWN, g_hInst, 0);
-    HFONT hFont = CreateFont(40, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
-    SendMessage(hEdit, WM_SETFONT, WPARAM(hFont), TRUE);
-
-
-    // Explicitly attach the Updown control to its 'buddy' edit control
-    SendMessage(hUpdown, UDM_SETBUDDY, (WPARAM)hEdit, 0);
-
-
-    return TRUE;
-}
 
 //
 //  FUNCTION: UpdownDlgProc(HWND, UINT, WPARAM, LPARAM)
@@ -1294,76 +1371,229 @@ BOOL OnInitUpdownDialog(HWND hWnd, HWND hWndFocus, LPARAM lParam)
 //  PURPOSE:  Processes messages for the Updown control dialog.
 //
 //
-LRESULT OnUpDownOk(HWND hWnd, int id, HWND /*hWndCtl*/ , UINT /*codeNotify*/) {
+LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/) {
 
+    LPWSTR cmdLine = L"C:\\Users\\User\\source\\repos\\Super-Slow-Motion-Video\\a.exe";
+    SECURITY_ATTRIBUTES sa = { 0 };
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+    char chBuf[BUFSIZE];
+    HANDLE hStdOutRd, hStdOutWr;
+    HANDLE hStdErrRd, hStdErrWr;
 
-
-    if (id == 1) {
-        TCHAR* TBuf = 0;
-        int BufSize = 0;
-        BufSize = Edit_GetTextLength(hEdit) + 1;
-        TBuf = new TCHAR[BufSize];
-
-        Edit_GetText(hEdit, TBuf, BufSize);
-        OutputDebugString(L"Value:");
-        //_bstr_t bstrResult = _bstr_t(TBuf);
-        OutputDebugString(TBuf);
-
-        CString solutionCString = MY_SOLUTIONDIR;
-        auto restOfFile = SysAllocString(L"/C Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-        BSTR withK = Concat(SysAllocString(L"/k "), solutionCString.AllocSysString());
-
-        BSTR cmd = Concat(withK, restOfFile);
-        //auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-        BSTR videoArg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
-        BSTR space = SysAllocString(L" ");
-        BSTR slowdownArg = SysAllocString(TBuf);
-        SELECTED_SLOWDOWN_MACRO = slowdownArg;
-        auto first_result = Concat(cmd, videoArg);
-        auto second_result = Concat(space,first_result);
-        
-
-        auto final_result = Concat(second_result, slowdownArg);
-        // OutputDebugString(final_result);
-
-         //OutputDebugString(final_result);
-        ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
-
-        SysFreeString(cmd);
-        SysFreeString(withK);
-        SysFreeString(videoArg);
-        SysFreeString(space);
-        SysFreeString(slowdownArg);
-        EndDialog(hWnd, 0);
-
-        return 0;
-
-    }
-    return 0;
-}
-
-INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
+    if (!CreatePipe(&hStdOutRd, &hStdOutWr, &sa, 0))
     {
-        // Handle the WM_INITDIALOG message in OnInitUpdownDialog
-        HANDLE_MSG(hWnd, WM_INITDIALOG, OnInitUpdownDialog);
-
-        // Handle the WM_CLOSE message in OnClose
-        HANDLE_MSG(hWnd, WM_CLOSE, OnClose);
-
-        HANDLE_MSG(hWnd, WM_COMMAND, OnUpDownOk);
-
-    default:
-        return FALSE;	// Let system deal with msg
+        // error handling...
     }
 
+    if (!CreatePipe(&hStdErrRd, &hStdErrWr, &sa, 0))
+    {
+        // error handling...
+    }
+
+    SetHandleInformation(hStdOutRd, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(hStdErrRd, HANDLE_FLAG_INHERIT, 0);
+
+
+
+
+    STARTUPINFO si = { 0 };
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    si.hStdOutput = hStdOutWr;
+    si.hStdError = hStdErrWr;
+
+    PROCESS_INFORMATION pi = { 0 };
+
+    if (!CreateProcessW(cmdLine, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+    {
+        // error handling...
+    }
+    else
+    {
+        DWORD dwRead;
+       
+        ReadFile(hStdOutRd, chBuf, BUFSIZE, &dwRead, NULL);
+        const size_t cSize = strlen(chBuf) + 1;
+        wchar_t* wc = new wchar_t[cSize];
+        mbstowcs(wc, chBuf, cSize);
+        console_output.push_back(L"HI");
+        LINES = (int)(console_output.size());
+        SendMessage(console_display, WM_PAINT, NULL, NULL);
+        SendMessage(console_display, WM_SIZE, NULL, NULL);
+        RECT size_rcClient;
+
+        GetClientRect(&size_rcClient);
+
+    
+        RECT movedRect = { size_rcClient.left, size_rcClient.top, size_rcClient.right, size_rcClient.bottom };
+        ::RedrawWindow(m_hWnd, &movedRect, 0, RDW_INVALIDATE | RDW_FRAME);
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+    }
+
+    CloseHandle(hStdOutRd);
+    CloseHandle(hStdOutWr);
+    CloseHandle(hStdErrRd);
+    CloseHandle(hStdErrWr);
+    return 0;
+
+
+
+
+
+
+    /*
+
+
+
+    TCHAR* TBuf = 0;
+    int BufSize = 0;
+    BufSize = ::Edit_GetTextLength(updown_box) + 1;
+    TBuf = new TCHAR[BufSize];
+
+    ::Edit_GetText(updown_box, TBuf, BufSize);
+    OutputDebugString(L"Value:");
+    //_bstr_t bstrResult = _bstr_t(TBuf);
+    OutputDebugString(TBuf);
+
+    CString solutionCString = MY_SOLUTIONDIR;
+    auto restOfFile = SysAllocString(L"/C Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
+    BSTR withK = Concat(SysAllocString(L"/k "), solutionCString.AllocSysString());
+
+    BSTR cmd = Concat(withK, restOfFile);
+    //auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
+    BSTR videoArg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
+    BSTR space = SysAllocString(L" ");
+    BSTR slowdownArg = SysAllocString(TBuf);
+    SELECTED_SLOWDOWN_MACRO = slowdownArg;
+    auto first_result = Concat(cmd, videoArg);
+    auto second_result = Concat(space,first_result);
+    
+
+    auto final_result = Concat(second_result, slowdownArg);
+    // OutputDebugString(final_result);
+
+        //OutputDebugString(final_result);
+    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
+
+    SysFreeString(cmd);
+    SysFreeString(withK);
+    SysFreeString(videoArg);
+    SysFreeString(space);
+    SysFreeString(slowdownArg);
+    EndDialog(hWnd, 0);
+
+    return 0;*/
+    
+}
+void CreateChildProcess()
+// Create a child process that uses the previously created pipes for STDIN and STDOUT.
+{
+    PROCESS_INFORMATION piProcInfo;
+    STARTUPINFO siStartInfo;
+    BOOL bSuccess = FALSE;
+
+    // Set up members of the PROCESS_INFORMATION structure. 
+
+    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+
+    // Set up members of the STARTUPINFO structure. 
+    // This structure specifies the STDIN and STDOUT handles for redirection.
+
+    ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
+    siStartInfo.cb = sizeof(STARTUPINFO);
+    siStartInfo.hStdError = g_hChildStd_OUT_Wr;
+    siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
+    siStartInfo.hStdInput = g_hChildStd_IN_Rd;
+    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    // Create the child process. 
+
+    bSuccess = CreateProcess(L"C:\\Users\\User\\source\\repos\\Super-Slow-Motion-Video\\a.exe",
+        NULL,     // command line 
+        NULL,          // process security attributes 
+        NULL,          // primary thread security attributes 
+        TRUE,          // handles are inherited 
+        0,             // creation flags 
+        NULL,          // use parent's environment 
+        NULL,          // use parent's current directory 
+        &siStartInfo,  // STARTUPINFO pointer 
+        &piProcInfo);  // receives PROCESS_INFORMATION 
+
+     // If an error occurs, exit the application. 
+    if (!bSuccess)
+        ErrorExit(TEXT("CreateProcess"));
+    else
+    {
+        // Close handles to the child process and its primary thread.
+        // Some applications might keep these handles to monitor the status
+        // of the child process, for example. 
+
+        CloseHandle(piProcInfo.hProcess);
+        CloseHandle(piProcInfo.hThread);
+
+        // Close handles to the stdin and stdout pipes no longer needed by the child process.
+        // If they are not explicitly closed, there is no way to recognize that the child process has ended.
+
+        CloseHandle(g_hChildStd_OUT_Wr);
+        CloseHandle(g_hChildStd_IN_Rd);
+    }
 }
 
-#pragma endregion
+void ReadFromPipe(void)
 
+// Read output from the child process's pipe for STDOUT
+// and write to the parent process's pipe for STDOUT. 
+// Stop when there is no more data. 
+{
+    DWORD dwRead, dwWritten;
+    CHAR chBuf[BUFSIZE];
+    BOOL bSuccess = FALSE;
+    HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
+    for (;;)
+    {
+        bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+        if (!bSuccess || dwRead == 0) break;
 
+        bSuccess = WriteFile(hParentStdOut, chBuf,
+            dwRead, &dwWritten, NULL);
+        if (!bSuccess) break;
+    }
+}
+void ErrorExit(PTSTR lpszFunction)
+
+// Format a readable error message, display a message box, 
+// and exit from the application.
+{
+    LPVOID lpMsgBuf;
+    LPVOID lpDisplayBuf;
+    DWORD dw = GetLastError();
+
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)&lpMsgBuf,
+        0, NULL);
+
+    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+        (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
+    StringCchPrintf((LPTSTR)lpDisplayBuf,
+        LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+        TEXT("%s failed with error %d: %s"),
+        lpszFunction, dw, lpMsgBuf);
+    MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+
+    LocalFree(lpMsgBuf);
+    LocalFree(lpDisplayBuf);
+    ExitProcess(1);
+}
 LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HDC hdc;
