@@ -167,8 +167,9 @@ class CStringDlg : public CDialogImpl<CStringDlg>
         ::SetFocus(GetDlgItem(IDC_STRING_EDIT1));
 
         CenterWindow();
+     
 
-        return 0;
+        return 1;
     }
     LRESULT OnEndDialog(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
     {
@@ -185,7 +186,51 @@ class CStringDlg : public CDialogImpl<CStringDlg>
     CComBSTR m_bstrValue2;
     CComBSTR m_bstrTitle;
 };
+class SaveAsDlg : public CDialogImpl<SaveAsDlg>
+{
+    BEGIN_MSG_MAP(SaveAsDlg)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER(IDOK, OnEndDialog)
+        COMMAND_ID_HANDLER(IDCANCEL, OnEndDialog)
+    END_MSG_MAP()
 
+    SaveAsDlg(const WCHAR* wszTitle = NULL, const WCHAR* wszInitialValue = NULL)
+    {
+        m_bstrTitle = wszTitle;
+        m_bstrValue = wszInitialValue;
+    }
+
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+    {
+        if (m_bstrTitle)
+        {
+            SetWindowText(m_bstrTitle);
+        }
+
+        if (m_bstrValue)
+        {
+            SetDlgItemText(IDC_STRING_SAVE, m_bstrValue);
+        }
+
+        ::SetFocus(GetDlgItem(IDC_STRING_SAVE));
+        CenterWindow();
+
+        CenterWindow();
+
+        return 1;
+    }
+    LRESULT OnEndDialog(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        GetDlgItemText(IDC_STRING_SAVE, m_bstrValue.m_str);
+
+        EndDialog(wID);
+        return 0;
+    }
+
+    enum { IDD = IDD_SAVEAS_DIALOG};
+    CComBSTR m_bstrValue;
+    CComBSTR m_bstrTitle;
+};
 /////////////////////////////////////////////////////////////////////////////
 // CBooleanDlg
 
