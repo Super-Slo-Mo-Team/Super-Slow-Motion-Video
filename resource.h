@@ -12,6 +12,7 @@
 #define IDC_STRING_EDIT2                215
 #define IDC_STRING_EDIT3                215
 
+#define IDC_STRING_SAVE					218
 #define IDI_ICONALPHA                   204
 #define IDC_BOOLEAN_TRUE                204
 #define IDD_STRING_DIALOG               205
@@ -50,9 +51,7 @@
 #define ID_WMPPLAYER2                   32905
 #define ID_WMPPLAYER2_STRETCHTOFIT      32906
 #define ID_TESTSHELL					209
-#define ID_2xOption						210
-#define ID_3xOption						211
-#define ID_4xOption						212
+
 #define ID_PLAYSLOMO					213
 #define ID_TRIMVIDEO					214
 #define ID_BUTTON_OPEN_MODAL			215
@@ -62,6 +61,7 @@
 
 #define IDD_UPDOWNDIALOG                144
 #define IDI_ICON1                       147
+#define IDD_SAVEAS_DIALOG				148
 
 #define IDC_BUTTON_UPDOWN               1015
 
