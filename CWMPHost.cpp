@@ -1117,7 +1117,7 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
     SysFreeString(slowdownArg);
     //SysFreeString(kString);
     return 0;
-
+    */
 LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     CString solutionCString = MY_SOLUTIONDIR;
     HRESULT      hr;
@@ -1148,8 +1148,8 @@ LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
 
     hr = m_spWMPPlayer->put_URL(final_concatination);
 
-    if (FAILMSG(hr))
-        return 0;
+    //if (FAILMSG(hr))
+        //return 0;
     return 0;
 
 }
@@ -1436,8 +1436,6 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
 
 
     */
-
-    HRESULT      hr;
     CComPtr<IWMPPlayer2> spWMPPlayer1;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
     VARIANT_BOOL fvalue = VARIANT_TRUE;
@@ -1470,7 +1468,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     OutputDebugString(TBuf);
 
     auto restOfFile = SysAllocString(L"test.bat ");
-    BSTR withK = Concat(SysAllocString(L"/k "), solutionCString.AllocSysString());
+    BSTR withK = Concat(SysAllocString(L" /C"), solutionCString.AllocSysString());
 
     BSTR cmd = Concat(withK, restOfFile);
     //auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
@@ -1485,23 +1483,39 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     auto final_result = Concat(real_second, slowdownArg);
     // OutputDebugString(final_result);
 
-
+    
+    //char* command = _com_util::ConvertBSTRToString(final_result);
         //OutputDebugString(final_result);
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
+    //system(command);
+    /*
+    HANDLE hProcess = NULL;
+    HANDLE hThread = NULL;
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    DWORD dwProcessId = 0;
+    DWORD dwThreadId = 0;
+    ZeroMemory(&si, sizeof(si));
+    ZeroMemory(&pi, sizeof(pi));
+    BOOL bCreateProcess = CreateProcess(final_result, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+   */
 
-    auto output_file = Concat(solutionCString.AllocSysString(), SysAllocString(L"out\\build\\x64-Release\\out_4X.mp4"));
-    auto original_file = Concat(solutionCString.AllocSysString(), SysAllocString(L"out\\build\\x64-Release\\out_1X.mp4"));
-
-    m_spWMPPlayer->put_URL(original_file);
-    m_2spWMPPlayer->put_URL(output_file);
+    /*SHELLEXECUTEINFO ShExecInfo = {0};
+    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.hwnd = NULL;
+    ShExecInfo.lpVerb = NULL;
+    ShExecInfo.lpFile = final_result;
+    ShExecInfo.lpParameters = L"";
+    ShExecInfo.lpDirectory = NULL;
+    ShExecInfo.nShow = SW_SHOW;
+    ShExecInfo.hInstApp = NULL;
+    ShellExecuteEx(&ShExecInfo);
+    WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+    CloseHandle(ShExecInfo.hProcess);
+    */
     HRESULT      hr;
-    VARIANT_BOOL gValue = true;
-
-
-
-    hr = m_2spWMPPlayer->put_fullScreen(gValue);
-    if (FAILMSG(hr))
-        return 0;
 
 
     SysFreeString(cmd);
@@ -1526,10 +1540,22 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
 
 
 
-    auto solutionPlusOutFolder = Concat(solutionCString.AllocSysString(), SysAllocString(L"out\\build\\x64-release"));
+    auto solutionPlusOutFolder = Concat(solutionCString.AllocSysString(), SysAllocString(L"out\\build\\x64-Release"));
     auto move1FirstArgument = Concat(solutionPlusOutFolder, SysAllocString(L"\\out_1X.mp4"));
     auto move2FirstArgument = Concat(solutionPlusOutFolder, SysAllocString(L"\\out.mp4"));
-     
+
+    while (true) {
+        GetFileAttributes(move2FirstArgument); // from winbase.h
+        if (INVALID_FILE_ATTRIBUTES == GetFileAttributes(move2FirstArgument) && GetLastError() == ERROR_FILE_NOT_FOUND)
+        {
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+
+    Sleep(2000);
     CreateDirectory((LPCWSTR)workspacePlusMPConverted,NULL);
     CreateDirectory((LPCWSTR)workspacePlusSlowdown,NULL);
    
@@ -1546,6 +1572,8 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     hr = spWMPPlayer1->put_URL(argumentTwoMoveMP4ConvertedFinal);
     hr = spWMPPlayer2->put_URL(argumentTwoMoveSlowDownFinal);
     
+    if (FAILMSG(hr))
+        return 0;
 
 
     return 0;
