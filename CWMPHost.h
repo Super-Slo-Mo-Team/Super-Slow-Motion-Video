@@ -49,16 +49,14 @@ public:
         COMMAND_ID_HANDLER(ID_WMPCORE_ERROR, OnWMPCoreInterface)
         COMMAND_ID_HANDLER(ID_WMPCORE2_DVD, OnWMPCoreInterface)
         COMMAND_ID_HANDLER(ID_WMPCORE_SELECTFOLDER, OnWMPSelectFolder)
-        COMMAND_ID_HANDLER(ID_TESTSHELL, OnTestShell)
+       // COMMAND_ID_HANDLER(ID_TESTSHELL, OnTestShell)
 
         COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLED, OnWMPPlayerEnabled)
         COMMAND_ID_HANDLER(ID_WMPPLAYER_FULLSCREEN, OnWMPPlayerFullScreen)
         COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLECONTEXTMENU, OnWMPPlayerEnableContextMenu)
         COMMAND_ID_HANDLER(ID_WMPPLAYER_UIMODE, OnWMPPlayerUIMode)
         COMMAND_ID_HANDLER(ID_WMPPLAYER2_STRETCHTOFIT, OnWMPPlayer2StretchToFit)
-        COMMAND_ID_HANDLER(ID_2xOption, twoxOption)
-        COMMAND_ID_HANDLER(ID_3xOption, threexOption)
-        COMMAND_ID_HANDLER(ID_4xOption, fourxOption)
+       
         COMMAND_ID_HANDLER(ID_PLAYSLOMO, PlaySlomo)
         COMMAND_ID_HANDLER(ID_TRIMVIDEO, TrimVideo)
         MESSAGE_HANDLER(WM_COMMAND, handle_object_messaages)
@@ -91,18 +89,15 @@ public:
 
     LRESULT OnWMPPlayer2StretchToFit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     //LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-    LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    //LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
 
-    LRESULT twoxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    LRESULT threexOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
-    LRESULT fourxOption(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnFullScreen(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
     LRESULT registerPopupClass(HINSTANCE hInst);
     LRESULT displayPopup(HWND hwnd);
-    LRESULT OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
+    LRESULT OnUpDownOk(HWND hWnd, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
 
     BSTR extract_filename(BSTR path);
 

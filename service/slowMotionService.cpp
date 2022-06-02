@@ -53,7 +53,43 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
 
     // create frame reader to interface directly with video frames
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
+    //
+    // FOR FRONT END, CREATES 1X video to display
+    
 
+    stringstream out;
+    out << OUT_PATH << "\\1x.yuv";
+    string tempOut = out.str();
+
+    ofstream writeOut(tempOut, ofstream::binary | std::ios::app);
+    for (directory_entry& entry : directory_iterator(YUV_PATH)) {
+        string filename = entry.path().string();
+        char* memblock;
+        streampos size;
+        ifstream ifs(filename, ios::binary | ios::ate);
+        if (ifs.is_open()) {
+            size = ifs.tellg();
+            memblock = new char[size];
+            ifs.seekg(0, ios::beg);
+            ifs.read(memblock, size);
+            ifs.close();
+
+            writeOut.write(memblock, size);
+        }
+        else {
+            cout << "Could not open" << filename << endl;
+        }
+    }
+    writeOut.close();
+
+    stringstream ffmpegCommand;
+    ffmpegCommand << "ffmpeg -hide_banner -loglevel error -f rawvideo -pix_fmt yuv420p -s:v " << videoProcessor->getVideoWidth() << "x" << videoProcessor->getVideoHeight() << " -r " << this->outputFps << " -i " << tempOut << " -c:v libx264 " << "out_1X.mp4";
+    string cmd = ffmpegCommand.str();
+
+    system(cmd.c_str());
+
+
+     
     // initialize models from torchscript
     try {
         interpolationModel = torch::jit::load(FRAME_INTERPOLATION_MODEL_PATH);
@@ -137,7 +173,7 @@ void SlowMotionService::startService() {
                 torch::from_blob(bufferFrame.getYFlowBack(), {1, 1, bufferFrame.getHeight(), bufferFrame.getWidth()})
             },
         1);
-               
+
         F_0_1.to(device);
         F_1_0.to(device);
         
