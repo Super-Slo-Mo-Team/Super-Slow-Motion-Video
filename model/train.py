@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torchvision
 from PIL import Image
@@ -177,7 +178,7 @@ class DataSet(torch.utils.data.Dataset):
 
 # Class containing all training methods
 class TrainRoutine():
-    def __init__(self):
+    def __init__(self, args):
         # initialize device
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -211,10 +212,15 @@ class TrainRoutine():
             param.requires_grad = False
 
         # initialize model dict
-        self.cLoss = []
-        self.valLoss = []
-        self.valPSNR = []
-        self.checkpoint_counter = 0
+        if args.continueTraining:
+            stateDict = torch.load(args.checkpointPath)
+            self.interpolationModel.load_state_dict(stateDict['state_dict'])
+
+        self.cLoss = stateDict['loss'] if args.continueTraining else []
+        self.valLoss = stateDict['valLoss'] if args.continueTraining else []
+        self.valPSNR = stateDict['valPSNR'] if args.continueTraining else []
+        self.epoch = stateDict['epoch'] + 1 if args.continueTraining else 0
+        self.checkpoint_counter = stateDict['epoch'] // CHECKPOINT_EPOCH if args.continueTraining else 0
 
     # helper function to calculate coefficients for F_t_0 and F_t_1
     def getFlowCoeff(self, indices):
@@ -292,7 +298,7 @@ class TrainRoutine():
     # Training routine
     #
     def train(self):
-        for epoch in range(NUM_EPOCHS):
+        for epoch in range(self.epoch, NUM_EPOCHS):
             print ('Epoch: ', epoch)
                 
             # append and reset
@@ -385,7 +391,11 @@ class TrainRoutine():
                 self.checkpoint_counter += 1
 
 def main():
-    mainTrainRoutine = TrainRoutine()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--continueTraining", type=bool, default=False, help='If set true, set path in --checkpoint')
+    parser.add_argument("--checkpointPath", type=str, help='path of checkpoint for continuing training')
+    
+    mainTrainRoutine = TrainRoutine(parser.parse_args())
     print ('Success with Initiation')
     mainTrainRoutine.train()
 
