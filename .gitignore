@@ -1,0 +1,30 @@
+# ignore vscode config settings
+.vscode
+
+# ignore Mac files
+**/.DS_Store
+
+# ignore python cache in model code
+model/__pycache__/*
+
+# ignore data
+model/data.nosync/*
+
+# ignore model check
+model/checkpoints/*
+
+# ignore backend C++ compilation executables
+build/*
+Makefile
+CMakeFiles/*
+cmake_install.cmake
+CMakeCache.txt
+
+# ignore backend debug bundles
+service/*.dSYM
+
+# ignore libtorch
+libtorch/*
+
+# ignore testing I/O
+IO/*

@@ -21,7 +21,7 @@ def main():
 
     while True:
 
-        file = (f"{flowPath}\\_{flowFrameIndex:05}.flo")
+        file = (f"{flowPath}\\_{flowFrameIndex:05}_middlebury.flo")
         
         frame = FlowFrame(file, flowFrameIndex)
 

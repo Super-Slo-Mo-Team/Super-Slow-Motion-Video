@@ -49,7 +49,7 @@ public:
         COMMAND_ID_HANDLER(ID_WMPCORE_ERROR, OnWMPCoreInterface)
         COMMAND_ID_HANDLER(ID_WMPCORE2_DVD, OnWMPCoreInterface)
         COMMAND_ID_HANDLER(ID_WMPCORE_SELECTFOLDER, OnWMPSelectFolder)
-        COMMAND_ID_HANDLER(ID_TESTSHELL, OnTestShell)
+       // COMMAND_ID_HANDLER(ID_TESTSHELL, OnTestShell)
 
         COMMAND_ID_HANDLER(ID_WMPPLAYER_ENABLED, OnWMPPlayerEnabled)
         COMMAND_ID_HANDLER(ID_WMPPLAYER_FULLSCREEN, OnWMPPlayerFullScreen)
@@ -89,7 +89,7 @@ public:
 
     LRESULT OnWMPPlayer2StretchToFit(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     //LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-    LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
+    //LRESULT OnTestShell(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
 
     LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
@@ -97,7 +97,7 @@ public:
     LRESULT handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
     LRESULT registerPopupClass(HINSTANCE hInst);
     LRESULT displayPopup(HWND hwnd);
-    LRESULT OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
+    LRESULT OnUpDownOk(HWND hWnd, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
 
     BSTR extract_filename(BSTR path);
 
