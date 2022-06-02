@@ -134,11 +134,6 @@ void SlowMotionService::startService() {
     // ensure autograd is off
     torch::NoGradGuard no_grad;
 
-    // TODO: put these in video processor
-    // initialize transforms
-    // normalize = transforms.Normalize(mean={0.429, 0.431, 0.397}, std={1, 1, 1});
-    // revNormalize = transforms.Normalize(mean={-0.429, -0.431, -0.397}, std={1, 1, 1});
-
     int currFrameIndex = 0;
 
     while (currFrameIndex < videoProcessor->getVideoFrameCount() * slowmoFactor - slowmoFactor) {

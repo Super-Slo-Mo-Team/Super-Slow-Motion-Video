@@ -187,7 +187,6 @@ vector<torch::Tensor> VideoProcessor::getFramePair(int frameIndex) {
  */
 torch::Tensor VideoProcessor::fileToTensor(string file){
     vector<int> bytes = VideoProcessor::ReadAllBytes(file);
-
     int frameSize = this->videoHeight * this->videoWidth;
 
     vector<int>::const_iterator start = bytes.begin();
@@ -204,9 +203,7 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     torch::Tensor V = torch::empty(0,torch::kUInt8);
 
     yTensor(yValues, &Y);
-
     mapColor(uValues, &U);
-
     mapColor(vValues, &V);
 
     if (Y.sizes() != U.sizes() || U.sizes() != V.sizes()) {
@@ -238,8 +235,12 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     B = B.unsqueeze(0);
 
     torch::Tensor img = torch::empty(0,torch::kFloat32);
-
     img = torch::cat({img,R,G,B},0);
+
+    // TODO: implement and test
+    // std::vector<double> norm_mean = {0.429, 0.431, 0.397};
+    // std::vector<double> norm_std = {1, 1, 1};
+    // img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
 
     return img.unsqueeze(0);
 }
@@ -322,6 +323,11 @@ void VideoProcessor::mapColor(std::vector<int> values, torch::Tensor* colorT ){
 vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     img.squeeze_();
     
+    // TODO: implement and test
+    // std::vector<double> norm_mean = {-0.429, -0.431, -0.397};
+    // std::vector<double> norm_std = {1, 1, 1};
+    // img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
+
     auto R = img[0];
     auto G = img[1];
     auto B = img[2];
