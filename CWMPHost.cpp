@@ -1438,7 +1438,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     }
     CString solutionCString = MY_SOLUTIONDIR;
 
-    /*
+    
     TCHAR* TBuf = 0;
     int BufSize = 0;
     BufSize = ::Edit_GetTextLength(updown_box) + 1;
@@ -1462,7 +1462,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     auto second_result = Concat(space, first_result);
 
     auto real_second = Concat(second_result, space);
-    auto final_result = Concat(second_result, slowdownArg);
+    auto final_result = Concat(real_second, slowdownArg);
     // OutputDebugString(final_result);
 
         //OutputDebugString(final_result);
@@ -1474,7 +1474,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     SysFreeString(space);
     SysFreeString(slowdownArg);
 
-    */
+    
     
     auto workspacePlusMPConverted = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\MP4Converted"));
     auto argumentOneMoveMP4ConvertedOne = Concat(workspacePlusMPConverted, SysAllocString(L"\\"));
@@ -1493,9 +1493,10 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     auto solutionPlusOutFolder = Concat(solutionCString.AllocSysString(), SysAllocString(L"out\\build\\x64-release"));
     auto move1FirstArgument = Concat(solutionPlusOutFolder, SysAllocString(L"\\out_1X.mp4"));
     auto move2FirstArgument = Concat(solutionPlusOutFolder, SysAllocString(L"\\out.mp4"));
-
-    CreateDirectoryA((LPCSTR)workspacePlusMPConverted,NULL);
-    CreateDirectoryA((LPCSTR)workspacePlusSlowdown,NULL);
+     
+    CreateDirectory((LPCWSTR)workspacePlusMPConverted,NULL);
+    CreateDirectory((LPCWSTR)workspacePlusSlowdown,NULL);
+   
     MoveFile(move1FirstArgument, argumentTwoMoveMP4ConvertedFinal);
     MoveFile(move2FirstArgument, argumentTwoMoveSlowDownFinal);
     hr = m_spWMPPlayer.QueryInterface(&spWMPPlayer1);
@@ -1508,7 +1509,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     hr = spWMPPlayer2->put_stretchToFit(fvalue);
     hr = spWMPPlayer1->put_URL(argumentTwoMoveMP4ConvertedFinal);
     hr = spWMPPlayer2->put_URL(argumentTwoMoveSlowDownFinal);
-
+    
 
     return 0;
     
