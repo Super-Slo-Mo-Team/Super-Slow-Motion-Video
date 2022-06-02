@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         cout << "Incorrect number of arguments. Exiting." << endl;
         exit(EXIT_FAILURE);
     }
-
+    
     //cout << current_path() << endl;
     // check input arguments
     string inputPath = argv[1];
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    if (slowmoFactor <= 1) {
+    if (slowmoFactor < 1) {
         cout << "Invalid slowmo factor. Exiting." << endl;
         exit(EXIT_FAILURE);
     }
@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
     _mkdir(YUV_PATH);
     _mkdir(OUT_PATH);
     _mkdir(FLO_PATH);
+    
 
     // initialize services
     FlowVectorService *fvs = FlowVectorService::GetInstance();
@@ -72,9 +73,11 @@ int main(int argc, char* argv[]) {
     
      // remove all temp directories
     // TODO: need to delete files first too
-    _rmdir(ROOT_PATH);
-    _rmdir(YUV_PATH);
-    _rmdir(FLO_PATH);
+    //_rmdir(ROOT_PATH);
+    //_rmdir(YUV_PATH);
+    //_rmdir(FLO_PATH);
+    const boost::filesystem::path path(ROOT_PATH);
+    boost::filesystem::remove_all(path);
 
     return EXIT_SUCCESS;
 }
