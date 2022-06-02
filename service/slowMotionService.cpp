@@ -55,12 +55,12 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
 
     // initialize models from torchscript
-    // try {
-    //     interpolationModel = torch::jit::load(FRAME_INTERPOLATION_MODEL_PATH);
-    // } catch (const c10::Error& e) {
-    //     cout << "Error loading Frame Interpolation model\n" << endl;
-    //     exit(EXIT_FAILURE);
-    // }
+    try {
+        interpolationModel = torch::jit::load(FRAME_INTERPOLATION_MODEL_PATH);
+    } catch (const c10::Error& e) {
+        cout << "Error loading Frame Interpolation model\n" << endl;
+        exit(EXIT_FAILURE);
+    }
     cout << "Interpolation Model is loaded." << endl;
 
     try {
@@ -95,6 +95,14 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
  * @brief Process video frames in pairs and created interpolated frames
  */
 void SlowMotionService::startService() {
+    // ensure autograd is off
+    torch::NoGradGuard no_grad;
+
+    // TODO: put these in video processor
+    // initialize transforms
+    // normalize = transforms.Normalize(mean={0.429, 0.431, 0.397}, std={1, 1, 1});
+    // revNormalize = transforms.Normalize(mean={-0.429, -0.431, -0.397}, std={1, 1, 1});
+
     int currFrameIndex = 0;
 
     while (currFrameIndex < videoProcessor->getVideoFrameCount() * slowmoFactor - slowmoFactor) {
@@ -114,6 +122,7 @@ void SlowMotionService::startService() {
             cout << "SMS: Received flow vectors out of order. Retrying." << endl;
             continue;
         }
+
         // create F_0_1 and F_1_0
         torch::Tensor F_0_1 = torch::cat(
             {
@@ -160,41 +169,41 @@ void SlowMotionService::startService() {
             
             // refine interpolation and generate soft visibility maps
             // TODO: do these need to be concatenated then placed as a single tensor into the vector??
-            // std::vector<torch::jit::IValue> interpolationInput;
-            // interpolationInput.push_back(I0);
-            // interpolationInput.push_back(I1);
-            // interpolationInput.push_back(F_0_1);
-            // interpolationInput.push_back(F_1_0);
-            // interpolationInput.push_back(F_t_1);
-            // interpolationInput.push_back(F_t_0);
-            // interpolationInput.push_back(g_I1_F_t_1);
-            // interpolationInput.push_back(g_I0_F_t_0);
+            std::vector<torch::jit::IValue> interpolationInput;
+            interpolationInput.push_back(I0);
+            interpolationInput.push_back(I1);
+            interpolationInput.push_back(F_0_1);
+            interpolationInput.push_back(F_1_0);
+            interpolationInput.push_back(F_t_1);
+            interpolationInput.push_back(F_t_0);
+            interpolationInput.push_back(g_I1_F_t_1);
+            interpolationInput.push_back(g_I0_F_t_0);
 
-            // torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
+            torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
 
-            // torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
-            // torch::Tensor F_t_1_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(2,4)}) + F_t_1;
+            torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
+            torch::Tensor F_t_1_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(2,4)}) + F_t_1;
             
-            // torch::Tensor temp = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(4,5)});
-            // torch::Tensor V_t_0 = torch::sigmoid(temp);
-            // torch::Tensor V_t_1 = 1 - V_t_0;
+            torch::Tensor temp = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(4,5)});
+            torch::Tensor V_t_0 = torch::sigmoid(temp);
+            torch::Tensor V_t_1 = 1 - V_t_0;
 
             // second pass of backwarp network
-            // backWarpInput.push_back(I0);
-            // backWarpInput.push_back(F_t_0_f);
+            backWarpInput.push_back(I0);
+            backWarpInput.push_back(F_t_0_f);
 
-            // torch::Tensor g_I0_F_t_0_f = this->backWarpModel.forward(backWarpInput).toTensor();
-            // backWarpInput.clear();
+            torch::Tensor g_I0_F_t_0_f = this->backWarpModel.forward(backWarpInput).toTensor();
+            backWarpInput.clear();
 
-            // backWarpInput.push_back(I1);
-            // backWarpInput.push_back(F_t_1_f);
+            backWarpInput.push_back(I1);
+            backWarpInput.push_back(F_t_1_f);
 
-            // torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
-            // backWarpInput.clear();
+            torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
+            backWarpInput.clear();
 
             // fuse warped images to create an interpolated frame
-            // torch::Tensor Ft_p = (wCoeff0 * V_t_0 * g_I0_F_t_0_f + wCoeff1 * V_t_1 * g_I1_F_t_1_f ) / (wCoeff0 * V_t_0 + wCoeff1 * V_t_1);
-            torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
+            torch::Tensor Ft_p = ((1-t) * V_t_0 * g_I0_F_t_0_f + t * V_t_1 * g_I1_F_t_1_f ) / ((1-t) * V_t_0 + t * V_t_1);
+            // torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
             
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
 
@@ -244,6 +253,4 @@ void SlowMotionService::startService() {
 
     system(cmd.c_str());
     cout << "Video Has Been Generated" << endl;
-    // TODO: reconstruct video
-
 }
