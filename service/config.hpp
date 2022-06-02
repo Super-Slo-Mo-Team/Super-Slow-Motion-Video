@@ -15,6 +15,7 @@
 
 // model checkpoints location
 #define MODEL_SCRIPT "..\\..\\..\\model\\model.py"
+#define FRAME_INTERPOLATION_CHECKPOINT_PATH "..\\..\\..\\model\\checkpoints\\epoch_23.ckpt"
 #define FRAME_INTERPOLATION_MODEL_PATH "..\\..\\..\\model\\checkpoints\\FrameInterpolation.ckpt"
 #define BACKWARP_MODEL_PATH "..\\..\\..\\model\\checkpoints\\traced_backwarp_model.pt"
 

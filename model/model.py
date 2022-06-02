@@ -166,13 +166,15 @@ class BackWarp(torch.nn.Module):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, help="'Interpolation' for UNet, 'BackWarp' for BackWarp")
+    parser.add_argument("--checkpoint", type=str, help="Path for interpolation checkpoint")
     parser.add_argument("--width", type=int, default=0, help='video width')
     parser.add_argument("--height", type=int, default=0, help='video height')
     args = parser.parse_args()
 
     if args.model == 'Interpolation':
         interpolationModel = UNet()
-        torch.jit.script(interpolationModel).save('../model/checkpoints/traced_interpolation_model.pt')
+        interpolationModel.load_state_dict(torch.load(args.checkpoint)['state_dict'])
+        torch.jit.script(interpolationModel).save('..\\..\\..\\model\\checkpoints\\traced_interpolation_model.pt')
     elif args.model == 'BackWarp':
         backWarp = BackWarp((args.width, args.height), torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
         torch.jit.script(backWarp).save('..\\..\\..\\model\\checkpoints\\traced_backwarp_model.pt')
