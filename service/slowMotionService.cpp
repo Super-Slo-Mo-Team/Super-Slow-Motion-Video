@@ -93,9 +93,9 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
     // initialize models from torchscript
     try {
         stringstream command;
-        command << "python3 " << MODEL_SCRIPT << " --model Interpolation --checkpoint " << FRAME_INTERPOLATION_CHECKPOINT_PATH;
+        command << "python3 " << MODEL_SCRIPT << " --model Interpolation --checkpoint " << INTERPOLATION_CHECKPOINT_PATH;
         system(command.str().c_str());
-        interpolationModel = torch::jit::load(FRAME_INTERPOLATION_MODEL_PATH);
+        interpolationModel = torch::jit::load(INTERPOLATION_MODEL_PATH);
     } catch (const c10::Error& e) {
         cout << "Error loading Frame Interpolation model\n" << endl;
         exit(EXIT_FAILURE);
