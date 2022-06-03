@@ -90,7 +90,7 @@ INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BSTR Concat(BSTR a, BSTR b);
- //////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWMPHost::OnFinalMessage(HWND /*hWnd*/)
 {
     ::PostQuitMessage(0);
@@ -153,22 +153,27 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
     {
         SetMenuInfo(hMenu, &mi);
     }
-
-    if (dlgOpen.DoModal(m_hWnd) == IDOK)
+    auto workspac_dialog = dlgOpen.DoModal(m_hWnd);
+    if (workspac_dialog == IDOK)
     {
         /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         if (FAILMSG(hr))
             return 0;*/
         selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
-        OutputDebugString(L"\n\n");
-
+        if (selected_folder_macro == NULL) {
+            selected_folder_macro = SysAllocString(L"C:");
+        }
         OutputDebugString(selected_folder_macro);
-        OutputDebugString(L"\n\n");
+    }
+    if (workspac_dialog == IDCANCEL)
+    {
+        SendMessage(m_hWnd, WM_CLOSE,NULL,NULL);
+        return 0;
     }
     m_dwAdviseCookie = 0;
 
     HINSTANCE g_hInst = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
- 
+
     // Load and register Updown control class
     INITCOMMONCONTROLSEX iccx;
     iccx.dwSize = sizeof(INITCOMMONCONTROLSEX);
@@ -220,43 +225,54 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         NULL,
         NULL);
 
-   console_output.push_back(L"Select a video to slowdown");
-   LINES = (int)(console_output.size());
-   SendMessage(console_display, WM_PAINT, NULL, NULL);
-   SendMessage(console_display, WM_SIZE, NULL, NULL);
-   
+    console_output.push_back(L"Select a video to slowdown");
+    LINES = (int)(console_output.size());
+    SendMessage(console_display, WM_PAINT, NULL, NULL);
+    SendMessage(console_display, WM_SIZE, NULL, NULL);
 
 
 
-   WNDCLASS wc_title1{};
-   wc_title1.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
-   wc_title1.lpszClassName = L"title_1";
-   wc_title1.hCursor = LoadCursor(nullptr, IDC_ARROW);
-   wc_title1.hbrBackground = (HBRUSH)COLOR_WINDOW;
-   wc_title1.lpfnWndProc = titleTwo;
-   RegisterClass(&wc_title1);
-   video_player1_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-       (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-       m_hWnd,
-       NULL,
-       NULL,
-       NULL);
 
-   updown_background = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
-       (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-       m_hWnd,
-       NULL,
-       NULL,
-       NULL);
-   video_player2_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE| WS_BORDER | ES_AUTOHSCROLL,
-       (LONG)((.1)*rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
-       m_hWnd,
-       NULL,
-       NULL,
-       NULL);
+    WNDCLASS wc_title1{};
+    wc_title1.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
+    wc_title1.lpszClassName = L"title_1";
+    wc_title1.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc_title1.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc_title1.lpfnWndProc = titleTwo;
+    RegisterClass(&wc_title1);
+    video_player1_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+        m_hWnd,
+        NULL,
+        NULL,
+        NULL);
 
-   
-    
+    updown_background = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        (LONG)((.7) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+        m_hWnd,
+        NULL,
+        NULL,
+        NULL);
+    video_player2_title = CreateWindow(L"title_1", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        (LONG)((.1) * rcClient.right - rcClient.left), (LONG)((.6) * rcClient.bottom - rcClient.top), (LONG)(.05 * (rcClient.right - rcClient.left)), (LONG)(.05 * (rcClient.bottom - rcClient.top)), // x, y, w, h
+        m_hWnd,
+        NULL,
+        NULL,
+        NULL);
+
+
+    previous_slomo = CreateWindow(
+        L"BUTTON",  // Predefined class; Unicode assumed 
+        L"Play Previous Slomo",      // Button text 
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
+        modalLeft + 10,         // x position 
+        modalTop + 400,         // y position 
+        120,        // Button width
+        120,        // Button height
+        m_hWnd,     // Parent window
+        NULL,       // No menu.
+        (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
+        NULL);
     trim1 = CreateWindow(
         L"BUTTON",  // Predefined class; Unicode assumed 
         L"Trim",      // Button text 
@@ -281,7 +297,7 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         NULL,       // No menu.
         (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
         NULL);
-   
+
     const TCHAR* fontName = _T("Croobie");
     const long nFontSize = 10;
 
@@ -296,6 +312,19 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
 
     ::ReleaseDC(open_modal, hdc);
     SendMessage(open_modal, WM_SETFONT, (WPARAM)s_hFont, (LPARAM)MAKELONG(TRUE, 0));
+    
+    hdc = ::GetDC(previous_slomo);
+
+    logFont = { 0 };
+    logFont.lfHeight = -MulDiv(nFontSize, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+    logFont.lfWeight = FW_BOLD;
+    _tcscpy_s(logFont.lfFaceName, fontName);
+
+    s_hFont = CreateFontIndirect(&logFont);
+
+    ::ReleaseDC(previous_slomo, hdc);
+    SendMessage(previous_slomo, WM_SETFONT, (WPARAM)s_hFont, (LPARAM)MAKELONG(TRUE, 0));
+
 
 
     popup.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -398,7 +427,7 @@ FAILURE:
     ::PostQuitMessage(0);
     return 0;
 }
- 
+
 LRESULT CWMPHost::OnDestroy(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& bHandled)
 {
     // stop listening to events
@@ -460,28 +489,27 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     LONG xModal3 = (LONG)(.47 * size_rcWidth);
     LONG yModal3 = (LONG)(0.80 * size_rcHeight);
     LONG widthModal3 = (LONG)(size_rcWidth * .115);
-    LONG heightModal3 = (LONG)(widthModal3/1.5);
-    
+    LONG heightModal3 = (LONG)(widthModal3 / 1.5);
+
     LONG xModal4 = (LONG)(0.025 * size_rcWidth);
     LONG yModal4 = (LONG)(.50 * size_rcHeight);
     LONG widthModal4 = (LONG)(size_rcWidth * .05);
-    LONG heightModal4 = (LONG)(widthModal4/1.5);
+    LONG heightModal4 = (LONG)(widthModal4 / 1.5);
 
     LONG xModal5 = (LONG)(0.525 * size_rcWidth);
     LONG yModal5 = (LONG)(0.50 * size_rcHeight);
- 
 
     LONG xModal8 = (LONG)(0.00 * size_rcWidth);
     LONG yModal8 = (LONG)(0.60 * size_rcHeight);
     LONG widthModal8 = (LONG)(size_rcWidth * .40);
-    LONG heightModal8 = (LONG)(widthModal8/1.8);
- 
+    LONG heightModal8 = (LONG)(widthModal8 / 1.8);
+
     LONG xModal_updown_box = (LONG)(.47 * size_rcWidth);
     LONG yModal_updown_box = (LONG)(0.65 * size_rcHeight);
     LONG widthModal_updown_box = (LONG)(size_rcWidth * .13);
     LONG heightModal_updown_box = (LONG)(widthModal3 / 3);
 
-    LONG xModal_updown_control = (LONG)(.60* size_rcWidth);
+    LONG xModal_updown_control = (LONG)(.60 * size_rcWidth);
     LONG yModal_updown_control = (LONG)(0.65 * size_rcHeight);
     LONG widthModal_updown_control = (LONG)(size_rcWidth * .02);
     LONG heightModal_updown_control = heightModal_updown_box;
@@ -490,32 +518,40 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     LONG yModal_updown_background = (LONG)(0.58 * size_rcHeight);
     LONG widthModal_updown_background = (LONG)(size_rcWidth * .20);
     LONG heightModal_updown_background = widthModal_updown_background;
-    
+
+    LONG xModal_previous = (LONG)(0.725 * size_rcWidth);
+    LONG yModal_previous= (LONG)(0.60 * size_rcHeight);
+    LONG widthModal_previous = (LONG)(size_rcWidth * .20);
+    LONG heightModal_previous = (LONG)(widthModal_previous/4);
+
+
     m_wndView.MoveWindow(xPlayer1, yPlayer1, widthPlayer1, heightPlayer1, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     m_wndView2.MoveWindow(xPlayer2, yPlayer2, widthPlayer2, heightPlayer2, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-    ::MoveWindow(open_modal,xModal3,yModal3,widthModal3, heightModal3, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-   // ::MoveWindow(updown_background, xModal_updown_background, yModal_updown_background, widthModal_updown_background, heightModal_updown_background, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::MoveWindow(open_modal, xModal3, yModal3, widthModal3, heightModal3, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    // ::MoveWindow(updown_background, xModal_updown_background, yModal_updown_background, widthModal_updown_background, heightModal_updown_background, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(updown_background, xModal_updown_background, yModal_updown_background, widthModal_updown_background, heightModal_updown_background, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(updown_box, xModal_updown_box, yModal_updown_box, widthModal_updown_box, heightModal_updown_box, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(updown_control, xModal_updown_control, yModal_updown_control, widthModal_updown_control, heightModal_updown_control, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
     ::MoveWindow(trim1, xModal4, yModal4, widthModal4, heightModal4, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(trim2, xModal5, yModal5, widthModal4, heightModal4, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::MoveWindow(previous_slomo, xModal_previous, yModal_previous, widthModal_previous, heightModal_previous, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
     ::MoveWindow(video_player1_title, (LONG)((.1) * size_rcClient.right - size_rcClient.left),
         yModal4, yModal4,
         (LONG)(.05 * (size_rcClient.bottom - size_rcClient.top)), SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-    ::MoveWindow(video_player2_title, (LONG)((.7) * size_rcClient.right - size_rcClient.left), 
+    ::MoveWindow(video_player2_title, (LONG)((.7) * size_rcClient.right - size_rcClient.left),
         yModal4, yModal4,
         (LONG)(.05 * (size_rcClient.bottom - size_rcClient.top)), SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     ::MoveWindow(console_display, xModal8, yModal8, widthModal8, heightModal8, SWP_DRAWFRAME | SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     RECT movedRect = { xModal8, yModal8, widthModal8, heightModal8 };
     ::RedrawWindow(console_display, &movedRect, 0, RDW_INVALIDATE | RDW_FRAME);
-   
+
     HBRUSH brush = CreateSolidBrush(RGB(79, 91, 102)); //create brush
 
     int w_length = (int)(wcslen(L"Input Video"));
     // Write a line of text to the client area.
-   
+
     HDC InputVideoDC = ::GetDC(video_player1_title);
     SelectObject(InputVideoDC, brush); //select brush into DC
     Rectangle(InputVideoDC, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
@@ -527,14 +563,14 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
     SetBkMode(InputVideoDC, TRANSPARENT);
     TextOut(InputVideoDC, (rect.right + rect.left) / 2, (rect.bottom + rect.top) / 6,
         L"Input Video", static_cast<int> (w_length));
-    
+
     HDC screenDC = GetDC(); //NULL gets whole screen
-   
+
     SelectObject(screenDC, brush); //select brush into DC
     Rectangle(screenDC, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)); //draw rectangle over whole screen
-    
-    ::ReleaseDC(NULL,screenDC);
- 
+
+    ::ReleaseDC(NULL, screenDC);
+
     HDC OutputVideoDC = ::GetDC(video_player2_title); //NULL gets whole screen
 
     w_length = (int)wcslen(L"Output Video");
@@ -565,8 +601,9 @@ LRESULT CWMPHost::OnSize(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam 
 LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */)
 {
     CFileOpenDlg dlgOpen;
+    CComPtr<IWMPPlayer2> spWMPPlayer2;
     HRESULT      hr;
-
+    
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
         hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
@@ -574,45 +611,8 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
         SELECTED_VIDEO_MACRO = path;
         SELECTED_VIDEOFILENAME_MACRO = extract_filename(path);
 
-        CString source = SELECTED_VIDEO_MACRO;
-        CString restOfFolder = L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1";
-        CString solution = MY_SOLUTIONDIR;
-        CString target = solution + restOfFolder;
-
-        //OutputDebugString(target);
-        SHFILEOPSTRUCT SH = { 0 };
-
-        SH.hwnd = NULL;
-        SH.wFunc = FO_COPY;
-
-        SH.fFlags = NULL;
-        SH.fFlags |= FOF_SILENT;
-        SH.fFlags |= FOF_NOCONFIRMMKDIR;
-        SH.fFlags |= FOF_NOCONFIRMATION;
-        SH.fFlags |= FOF_WANTMAPPINGHANDLE;
-        SH.fFlags |= FOF_NOERRORUI;
-
-        std::vector<TCHAR> sourceBuffer;
-        std::vector<TCHAR> targetBuffer;
-
-        sourceBuffer.resize(source.GetLength() + 1);
-        memcpy(&(sourceBuffer[0]), source.operator LPCTSTR(),
-            sizeof(TCHAR) * (source.GetLength() + 1));  // (1)
-        sourceBuffer.push_back('\0');
-
-        targetBuffer.resize(target.GetLength() + 1);
-        memcpy(&(targetBuffer[0]), target.operator LPCTSTR(),
-            sizeof(TCHAR) * (target.GetLength() + 1));  // (1)
-        targetBuffer.push_back('\0');
-
-        SH.pFrom = &(sourceBuffer[0]);
-        SH.pTo = &(targetBuffer[0]);
-        ::SHFileOperation(&SH);
-        hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
-        
         if (FAILMSG(hr))
             return 0;
-        CComPtr<IWMPPlayer2> spWMPPlayer2;
 
         hr = m_spWMPPlayer.QueryInterface(&spWMPPlayer2);
         if (FAILMSG(hr))
@@ -1076,48 +1076,7 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
     }
     return 0;
 }
-/*LRESULT CWMPHost::OnTestShell(WORD /* wNotifyCode *///, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
- /*   //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir  \"C:\\TestFolder\""), NULL, SW_SHOWNORMAL);
-    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("\"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
-    //ShellExecute(NULL, NULL, L"cmd", _T("/c mkdir \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNewFldr.bat\""), NULL, SW_SHOWNORMAL);
-    // this one works ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat\""), NULL, SW_SHOW);
-    //BSTR test = _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat");
-    //ShellExecute(NULL, _T("open"), _T("cmd.exe"), _T("/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat\""), NULL, SW_SHOW);
-    //BSTR cmd = L"/k \"%CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\testNew.bat testDir\"";
-    CString solutionCString = MY_SOLUTIONDIR;
-    auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat");
 
-    auto solutionBSTR = solutionCString.AllocSysString();
-    auto cmd = Concat(solutionBSTR, restOfFile);
-    //auto a = SysAllocString(L"/k %CD%\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-    //auto restOfFile = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-
-    //auto solutionBSTR = solutionCString.AllocSysString();
-    //auto cmd = Concat(solutionBSTR, restOfFile);
-    auto videoArg = SysAllocString(SELECTED_VIDEOFILENAME_MACRO);
-    auto space = SysAllocString(L" ");
-    auto slowdownArg = SysAllocString(SELECTED_SLOWDOWN_MACRO);
-    //auto kString = SysAllocString(L"/k ");
-
-    //auto prep = Concat(kString, cmd);
-    auto prep = SysAllocString(L"/k C:\\Users\\\"Sean H\"\\Documents\\ecs193\\Super-Slow-Motion-Video\\Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\test.bat ");
-    auto first_result = Concat(prep, videoArg);
-    auto second_result = Concat(first_result, space);
-    auto final_result = Concat(second_result, slowdownArg);
-    // OutputDebugString(final_result);
-
-     //OutputDebugString(final_result);
-    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
-
-
-    //SysFreeString(cmd);
-    //SysFreeString(solutionBSTR);
-    SysFreeString(videoArg);
-    SysFreeString(space);
-    SysFreeString(slowdownArg);
-    //SysFreeString(kString);
-    return 0;
-    */
 LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     CString solutionCString = MY_SOLUTIONDIR;
     HRESULT      hr;
@@ -1136,7 +1095,6 @@ LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWnd
     /*
     std::wstring wstr(video_arg);
     size_t video_type_idx = wstr.rfind(SysAllocString(L"."));
-
     wstr.insert(video_type_idx, final_concat_insertion);
     BSTR video_name = SysAllocString(wstr.c_str());
     */
@@ -1173,11 +1131,7 @@ LRESULT background_proc(HWND hwnd, UINT Umsg, WPARAM, LPARAM)
 
         return 0;
 
-    case WM_SIZE:
-
-        // Retrieve the dimensions of the client area. 
-      
-        return 0;
+   
 
     case WM_PAINT:
 
@@ -1231,8 +1185,11 @@ LRESULT CWMPHost::handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lP
 
     if ((HWND)lParam == open_modal)
     {
-        
+
         OnUpDownOk(m_hWnd, NULL, NULL, NULL);
+    }
+    if ((HWND)lParam == previous_slomo) {
+        playPreviousSlomoProc();
     }
     if ((HWND)lParam == trim1)
     {
@@ -1287,7 +1244,7 @@ BSTR CWMPHost::extract_filename(BSTR path)
 
     return bstr;
 }
-LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID , HWND /* hWndCtl */, BOOL& /* bHandled */) {
+LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl */, BOOL& /* bHandled */) {
     BSTR video_name, video_file_and_path;
     if (wID == WORD(1)) {
         video_name = SELECTED_VIDEOFILENAME_MACRO2;
@@ -1349,8 +1306,8 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID , HWND /* hWndCtl 
 
     auto penultimate = Concat(output_file_name, SysAllocString(L"_trimmed"));
     auto final_result = Concat(penultimate, SysAllocString(extension));
- 
-    ShellExecute(NULL, _T("open"),_T("cmd.exe"), final_result, NULL, SW_SHOW);
+
+    ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
     return 0;
 }
 //BOOL CWMPHost::OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
@@ -1376,31 +1333,22 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     char chBuf[BUFSIZE];
     HANDLE hStdOutRd, hStdOutWr;
     HANDLE hStdErrRd, hStdErrWr;
-
     if (!CreatePipe(&hStdOutRd, &hStdOutWr, &sa, 0))
     {
         // error handling...
     }
-
     if (!CreatePipe(&hStdErrRd, &hStdErrWr, &sa, 0))
     {
         // error handling...
     }
-
     SetHandleInformation(hStdOutRd, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(hStdErrRd, HANDLE_FLAG_INHERIT, 0);
-
-
-
-
     STARTUPINFO si = { 0 };
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     si.hStdOutput = hStdOutWr;
     si.hStdError = hStdErrWr;
-
     PROCESS_INFORMATION pi = { 0 };
-
     if (!CreateProcessW(cmdLine, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
     {
         // error handling...
@@ -1408,7 +1356,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     else
     {
         DWORD dwRead;
-       
+
         ReadFile(hStdOutRd, chBuf, BUFSIZE, &dwRead, NULL);
         const size_t cSize = strlen(chBuf) + 1;
         wchar_t* wc = new wchar_t[cSize];
@@ -1418,23 +1366,18 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
         SendMessage(console_display, WM_PAINT, NULL, NULL);
         SendMessage(console_display, WM_SIZE, NULL, NULL);
         RECT size_rcClient;
-
         GetClientRect(&size_rcClient);
 
-    
         RECT movedRect = { size_rcClient.left, size_rcClient.top, size_rcClient.right, size_rcClient.bottom };
         ::RedrawWindow(m_hWnd, &movedRect, 0, RDW_INVALIDATE | RDW_FRAME);
         CloseHandle(pi.hThread);
         CloseHandle(pi.hProcess);
     }
-
     CloseHandle(hStdOutRd);
     CloseHandle(hStdOutWr);
     CloseHandle(hStdErrRd);
     CloseHandle(hStdErrWr);
     return 0;
-
-
     */
     CComPtr<IWMPPlayer2> spWMPPlayer1;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
@@ -1456,7 +1399,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     }
     CString solutionCString = MY_SOLUTIONDIR;
 
-    
+
     TCHAR* TBuf = 0;
     int BufSize = 0;
     BufSize = ::Edit_GetTextLength(updown_box) + 1;
@@ -1483,7 +1426,7 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     auto final_result = Concat(real_second, slowdownArg);
     // OutputDebugString(final_result);
 
-    
+
     //char* command = _com_util::ConvertBSTRToString(final_result);
         //OutputDebugString(final_result);
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
@@ -1501,20 +1444,20 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     WaitForSingleObject(pi.hProcess, INFINITE);
    */
 
-    /*SHELLEXECUTEINFO ShExecInfo = {0};
-    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-    ShExecInfo.hwnd = NULL;
-    ShExecInfo.lpVerb = NULL;
-    ShExecInfo.lpFile = final_result;
-    ShExecInfo.lpParameters = L"";
-    ShExecInfo.lpDirectory = NULL;
-    ShExecInfo.nShow = SW_SHOW;
-    ShExecInfo.hInstApp = NULL;
-    ShellExecuteEx(&ShExecInfo);
-    WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
-    CloseHandle(ShExecInfo.hProcess);
-    */
+   /*SHELLEXECUTEINFO ShExecInfo = {0};
+   ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+   ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+   ShExecInfo.hwnd = NULL;
+   ShExecInfo.lpVerb = NULL;
+   ShExecInfo.lpFile = final_result;
+   ShExecInfo.lpParameters = L"";
+   ShExecInfo.lpDirectory = NULL;
+   ShExecInfo.nShow = SW_SHOW;
+   ShExecInfo.hInstApp = NULL;
+   ShellExecuteEx(&ShExecInfo);
+   WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
+   CloseHandle(ShExecInfo.hProcess);
+   */
     HRESULT      hr;
 
 
@@ -1524,8 +1467,8 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     SysFreeString(space);
     SysFreeString(slowdownArg);
 
-    
-    
+
+
     auto workspacePlusMPConverted = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\MP4Converted"));
     auto argumentOneMoveMP4ConvertedOne = Concat(workspacePlusMPConverted, SysAllocString(L"\\"));
     auto argumentOneMoveMP4ConvertedTwo = Concat(argumentOneMoveMP4ConvertedOne, SysAllocString(saveAsVideoName));
@@ -1556,9 +1499,9 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     }
 
     Sleep(2000);
-    CreateDirectory((LPCWSTR)workspacePlusMPConverted,NULL);
-    CreateDirectory((LPCWSTR)workspacePlusSlowdown,NULL);
-   
+    CreateDirectory((LPCWSTR)workspacePlusMPConverted, NULL);
+    CreateDirectory((LPCWSTR)workspacePlusSlowdown, NULL);
+
     MoveFile(move1FirstArgument, argumentTwoMoveMP4ConvertedFinal);
     MoveFile(move2FirstArgument, argumentTwoMoveSlowDownFinal);
     hr = m_spWMPPlayer.QueryInterface(&spWMPPlayer1);
@@ -1571,13 +1514,13 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     hr = spWMPPlayer2->put_stretchToFit(fvalue);
     hr = spWMPPlayer1->put_URL(argumentTwoMoveMP4ConvertedFinal);
     hr = spWMPPlayer2->put_URL(argumentTwoMoveSlowDownFinal);
-    
+
     if (FAILMSG(hr))
         return 0;
 
 
     return 0;
-    
+
 }
 void CreateChildProcess()
 // Create a child process that uses the previously created pipes for STDIN and STDOUT.
@@ -1713,7 +1656,7 @@ LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     // Create an array of lines to display. 
 
-  
+
 
     switch (uMsg)
     {
@@ -1872,7 +1815,7 @@ LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_PAINT:
-       
+
         // Prepare the window for painting.
         hdc = BeginPaint(hwnd, &ps);
 
@@ -1885,7 +1828,7 @@ LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // Get horizontal scroll bar position.
         GetScrollInfo(hwnd, SB_HORZ, &si);
         xPos = si.nPos;
-       
+
         // Find painting limits.
         FirstLine = max(0, yPos + ps.rcPaint.top / yChar);
         LastLine = min(LINES - 1, yPos + ps.rcPaint.bottom / yChar);
@@ -1955,12 +1898,6 @@ LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         return 0;
 
-    case WM_SIZE:
-
-        // Retrieve the dimensions of the client area. 
-        yClient = HIWORD(lParam);
-        xClient = LOWORD(lParam);
-        return 0;
 
     case WM_PAINT:
 
@@ -1976,4 +1913,30 @@ LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 
+}
+LRESULT CWMPHost::playPreviousSlomoProc() {
+    HRESULT      hr;
+    CComPtr<IWMPPlayer2> spWMPPlayer2;
+    auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
+    CreateDirectory(workspacePlusSlowedDown, NULL);
+    COpenPreviousSloMoDlg dlgOpen(workspacePlusSlowedDown);
+    if (dlgOpen.DoModal(m_hWnd) == IDOK)
+    {
+        hr = m_2spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+        auto path = SysAllocString(dlgOpen.m_bstrName);
+        SELECTED_VIDEO_MACRO2 = path;
+        SELECTED_VIDEOFILENAME_MACRO2 = extract_filename(path);
+
+
+
+        hr = m_2spWMPPlayer.QueryInterface(&spWMPPlayer2);
+        if (FAILMSG(hr))
+            return 0;
+
+        if (FAILMSG(hr))
+            return 0;
+        hr = spWMPPlayer2->put_stretchToFit(VARIANT_TRUE);
+
+    }
+    return 0;
 }

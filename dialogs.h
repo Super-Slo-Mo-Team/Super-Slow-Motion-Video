@@ -104,7 +104,6 @@ class CFileOpenDlg : public CDialogImpl<CFileOpenDlg>
         // display open dialog
         memset(&ofn, 0, sizeof(ofn)); // initialize structure to 0/NULL
         wszFileName[0] = L'\0';
-
         ofn.lStructSize = sizeof(ofn);
         ofn.lpstrFile = wszFileName;
         ofn.nMaxFile = sizeof(wszFileName) / sizeof(wszFileName[0]);
@@ -275,3 +274,59 @@ class CBooleanDlg : public CDialogImpl<CBooleanDlg>
     CComBSTR m_bstrTitle;
 };
 
+class COpenPreviousSloMoDlg : public CDialogImpl<COpenPreviousSloMoDlg>
+{
+    BEGIN_MSG_MAP(COpenPreviousSloMoDlg)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER(IDOK, OnEndDialog)
+        COMMAND_ID_HANDLER(IDCANCEL, OnEndDialog)
+        COMMAND_ID_HANDLER(IDC_FILEOPEN_BROWSE, OnBrowse)
+    END_MSG_MAP()
+    COpenPreviousSloMoDlg(BSTR workspace_folder) {
+        workspace = workspace_folder;
+    }
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+    {
+        ::SetFocus(GetDlgItem(IDC_FILEOPEN_EDIT));
+        CenterWindow();
+        return 0;
+    }
+    LRESULT OnEndDialog(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        GetDlgItemText(IDC_FILEOPEN_EDIT, m_bstrName.m_str);
+        EndDialog(wID);
+        return 0;
+    }
+    LRESULT OnBrowse(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        OPENFILENAME    ofn;
+        WCHAR           wszFileName[_MAX_PATH];
+
+        // display open dialog
+        memset(&ofn, 0, sizeof(ofn)); // initialize structure to 0/NULL
+        wszFileName[0] = L'\0';
+        ofn.lpstrInitialDir = workspace;
+        ofn.lStructSize = sizeof(ofn);
+        ofn.lpstrFile = wszFileName;
+        ofn.nMaxFile = sizeof(wszFileName) / sizeof(wszFileName[0]);
+        ofn.lpstrDefExt = NULL;
+        ofn.Flags = OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+        ofn.lpstrFilter = L"All files\0*.*\0";
+        ofn.nFilterIndex = 0;
+        ofn.hwndOwner = m_hWnd;
+        ofn.hInstance = _Module.GetResourceInstance();
+
+        if (!GetOpenFileName(&ofn))
+            return 0;
+
+        m_bstrName = wszFileName;
+        EndDialog(IDOK);
+
+        return 0;
+    }
+
+    enum { IDD = IDD_FILEOPENPREVIOUSSLOMO_DIALOG };
+    CComBSTR m_bstrName;
+    CComBSTR workspace;
+
+};
