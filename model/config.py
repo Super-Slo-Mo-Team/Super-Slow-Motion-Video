@@ -4,7 +4,7 @@ import torchvision.transforms as transforms
 
 # CUDA command
 
-CUDA_COMMAND = "C:\\Users\\SeanH\\Documents\\superSloMo\\Optical_Flow_SDK_3.0.15\\NvOFBasicSamples\\build\\AppOFCuda\\Debug\\AppOFCuda.exe"
+CUDA_COMMAND = "..\\appOFCuda\\Release\\AppOFCuda.exe"
 
 # Dataset Path Macros
 
