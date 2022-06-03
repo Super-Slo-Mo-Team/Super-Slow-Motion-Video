@@ -152,21 +152,12 @@ class CStringDlg : public CDialogImpl<CStringDlg>
             SetWindowText(m_bstrTitle);
         }
 
-        if (m_bstrValue)
-        {
-            SetDlgItemText(IDC_STRING_EDIT1, m_bstrValue);
+ 
+        SetDlgItemText(IDC_STRING_EDIT1, L"00:00:00");
 
-        }
-        if (m_bstrValue1)
-        {
-            SetDlgItemText(IDC_STRING_EDIT2, m_bstrValue1);
+        SetDlgItemText(IDC_STRING_EDIT2, L"00:00:00");
 
-        }
-        if (m_bstrValue2)
-        {
-            SetDlgItemText(IDC_STRING_EDIT3, m_bstrValue2);
-
-        }
+        
 
         ::SetFocus(GetDlgItem(IDC_STRING_EDIT1));
 

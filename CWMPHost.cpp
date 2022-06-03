@@ -64,6 +64,7 @@ BSTR SELECTED_VIDEO_MACRO2;
 BSTR SELECTED_VIDEOFILENAME_MACRO;//just the name
 BSTR SELECTED_VIDEOFILENAME_MACRO2;
 BSTR SELECTED_SLOWDOWN_MACRO;
+int line_num = 2;
 std::vector<const wchar_t*> console_output;
 int LINES = 0;
 
@@ -153,8 +154,8 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
     {
         SetMenuInfo(hMenu, &mi);
     }
-    auto workspac_dialog = dlgOpen.DoModal(m_hWnd);
-    if (workspac_dialog == IDOK)
+    auto workspace_dialog = dlgOpen.DoModal(m_hWnd);
+    if (workspace_dialog == IDOK)
     {
         /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         if (FAILMSG(hr))
@@ -165,7 +166,7 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         }
         OutputDebugString(selected_folder_macro);
     }
-    if (workspac_dialog == IDCANCEL)
+    if (workspace_dialog == IDCANCEL)
     {
         SendMessage(m_hWnd, WM_CLOSE,NULL,NULL);
         return 0;
@@ -220,17 +221,17 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
     wc.hbrBackground = CreateSolidBrush(RGB(46, 42, 45));
     wc.lpfnWndProc = ConsoleProc;
     RegisterClass(&wc);
-    console_display = CreateWindow(L"scroll_window", L"", WS_OVERLAPPED | WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+    console_display = CreateWindow(L"scroll_window", L"", WS_OVERLAPPED | WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | WS_CLIPSIBLINGS,
         200, 200, (LONG)(.4 * (rcClient.right - rcClient.left)), (LONG)(.4 * (rcClient.bottom - rcClient.top)), // x, y, w, h
         m_hWnd,
         NULL,
         NULL,
         NULL);
 
-    console_output.push_back(L"Select a video to slowdown");
+    console_output.push_back(L"[0]: Select a video to slowdown");
+    console_output.push_back(Concat(SysAllocString(L"[1]: WorkSpace Folder: "), SysAllocString(selected_folder_macro)));
     LINES = (int)(console_output.size());
     SendMessage(console_display, WM_PAINT, NULL, NULL);
-    SendMessage(console_display, WM_SIZE, NULL, NULL);
 
 
 
@@ -609,6 +610,50 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
         if (dlgOpen.m_bstrName == NULL) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No Video Selected [File Open] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
+        if (!PathFileExists(dlgOpen.m_bstrName)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Video Does not exist [File Open] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
+        std::wstring wstr(dlgOpen.m_bstrName);
+        size_t period = 0;
+        size_t len = wstr.length();
+        for (size_t i = 0; i < len; i++) {
+            if (wstr[i] == L'.') {
+                period = i;
+            }
+        }
+        auto extension = SysAllocString(wstr.substr(period).c_str());
+        auto mp4extention = SysAllocString(L".mp4");
+        auto y4mextension = SysAllocString(L".y4m");
+        if ((int)(VarBstrCmp(extension, mp4extention, NULL, NORM_IGNOREWIDTH | NORM_IGNORESYMBOLS | NORM_IGNORENONSPACE | NORM_IGNORECASE)) != 1 && (int)(VarBstrCmp(extension, y4mextension, NULL, NORM_IGNOREWIDTH | NORM_IGNORESYMBOLS | NORM_IGNORENONSPACE | NORM_IGNORECASE) != 1)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - Not supported extension [File Open] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
         hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
@@ -1073,49 +1118,27 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
         /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         if (FAILMSG(hr))
             return 0;*/
+        if (SysAllocString(dlgOpen.m_bstrName) == NULL) {
+            selected_folder_macro = SysAllocString(L"C:");
+        }
         selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
-        OutputDebugString(L"\n\n");
-
-        OutputDebugString(selected_folder_macro);
-        OutputDebugString(L"\n\n");
     }
+    std::wstring num = std::to_wstring(line_num++);
+    auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+    auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Changed Workspace Folder "));
+    console_output.push_back(consoleOut);
+    console_output.push_back(SysAllocString(selected_folder_macro));
+    LINES = (int)(console_output.size());
+    SendMessage(console_display, WM_PAINT, NULL, NULL);
+    SendMessage(console_display, WM_SIZE, NULL, NULL);
+    ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+    ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+    return 0;
     return 0;
 }
 
-LRESULT CWMPHost::PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */) {
-    CString solutionCString = MY_SOLUTIONDIR;
-    HRESULT      hr;
 
-    auto solution_dir_to_video_folder = SysAllocString(L"Super-Slow-Motion-Video-LN-ProjectStructure\\UserDir\\ExampleProj1\\Outputs\\");
-    auto solutionBSTR = solutionCString.AllocSysString();
-    auto full_video_folder_path = Concat(solutionBSTR, solution_dir_to_video_folder);
-    auto slowdown = SysAllocString(SELECTED_SLOWDOWN_MACRO);
-    auto videoarg = SysAllocString(L"Output_");
-    auto x_letter = SysAllocString(L"X");
-    auto extension = SysAllocString(L".mp4");
-    auto penultimate_concat = Concat(videoarg, slowdown);
-    auto final_concat_insertion = Concat(penultimate_concat, x_letter);
-    auto final_video = Concat(final_concat_insertion, extension);
 
-    /*
-    std::wstring wstr(video_arg);
-    size_t video_type_idx = wstr.rfind(SysAllocString(L"."));
-    wstr.insert(video_type_idx, final_concat_insertion);
-    BSTR video_name = SysAllocString(wstr.c_str());
-    */
-
-    auto final_concatination = Concat(full_video_folder_path, final_video);
-    //OutputDebugString(L"\n\n\n");
-    //OutputDebugString(final_concatination);
-    //OutputDebugString(L"\n\n\n");
-
-    hr = m_spWMPPlayer->put_URL(final_concatination);
-
-    //if (FAILMSG(hr))
-        //return 0;
-    return 0;
-
-}
 LRESULT background_proc(HWND hwnd, UINT Umsg, WPARAM, LPARAM)
 {
     HDC hdc;
@@ -1163,27 +1186,6 @@ LRESULT CALLBACK PopupProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-LRESULT CWMPHost::displayPopup(HWND hWnd) {
-    try {
-        popUp_hWnd = CreateWindow(L"popupClass", L"Proceess initalizer", WS_VISIBLE | WS_OVERLAPPEDWINDOW, 400, 400, 400, 400, hWnd, NULL, NULL, NULL);
-        open_modal = CreateWindow(
-            L"BUTTON",  // Predefined class; Unicode assumed 
-            L"SLow Down Video",      // Button text 
-            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // Styles 
-            10,         // x position 
-            10,         // y position 
-            100,        // Button width
-            100,        // Button height
-            popUp_hWnd,     // Parent window
-            NULL,       // No menu.
-            (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE)),
-            NULL);
-    }
-    catch (int bad) {
-        return bad;
-    }
-    return 0;
-}
 
 LRESULT CWMPHost::handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled)
 {
@@ -1234,6 +1236,7 @@ BSTR Concat(BSTR a, BSTR b)
     result[lengthA + lengthB] = 0;
     return result;
 }
+
 BSTR CWMPHost::extract_filename(BSTR path)
 {
     std::wstring wstr(path);
@@ -1250,12 +1253,39 @@ BSTR CWMPHost::extract_filename(BSTR path)
     return bstr;
 }
 LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl */, BOOL& /* bHandled */) {
+
     BSTR video_name, video_file_and_path;
     if (wID == WORD(1)) {
+        if (SELECTED_VIDEOFILENAME_MACRO2 == NULL) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No Video Selected [Trim2]"));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+
+            return 0;
+        }
+        
         video_name = SELECTED_VIDEOFILENAME_MACRO2;
         video_file_and_path = SELECTED_VIDEO_MACRO2;
     }
     else {
+        if (SELECTED_VIDEOFILENAME_MACRO == NULL) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No Video Selected [Trim1] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
         video_name = SELECTED_VIDEOFILENAME_MACRO;
         video_file_and_path = SELECTED_VIDEO_MACRO;
     }
@@ -1403,6 +1433,35 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     return 0;
     */
     if (SELECTED_VIDEO_MACRO == NULL) {
+        std::wstring num = std::to_wstring(line_num++);
+        auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+        auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No Video Selected [Slowdown Video] "));
+        console_output.push_back(consoleOut);
+        LINES = (int)(console_output.size());
+        SendMessage(console_display, WM_PAINT, NULL, NULL);
+        SendMessage(console_display, WM_SIZE, NULL, NULL);
+        ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+        ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+        return 0;
+    }
+    std::wstring wstr(SELECTED_VIDEO_MACRO);
+    size_t period = 0;
+    size_t len = wstr.length();
+    for (size_t i = 0; i < len; i++) {
+        if (wstr[i] == L'.') {
+            period = i;
+        }
+    }
+    if (wstr.substr(period) != L".y4m") {
+        std::wstring num = std::to_wstring(line_num++);
+        auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+        auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No supported extension [Slowdown Video] "));
+        console_output.push_back(consoleOut);
+        LINES = (int)(console_output.size());
+        SendMessage(console_display, WM_PAINT, NULL, NULL);
+        SendMessage(console_display, WM_SIZE, NULL, NULL);
+        ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+        ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
         return 0;
     }
     CComPtr<IWMPPlayer2> spWMPPlayer1;
@@ -1419,7 +1478,17 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     if (response == IDOK)
     {
         saveAsVideoName = dlgSaveas.m_bstrValue;
-        if (saveAsVideoName == ATL::CComBSTR(L"")) {
+        std::wstring saveaswstr(saveAsVideoName);
+        if (saveAsVideoName == ATL::CComBSTR(L"") || saveaswstr[0] == L' ') {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - Bad Save As [Slowdown Video] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
     }
@@ -1451,6 +1520,18 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     auto real_second = Concat(second_result, space);
     auto final_result = Concat(real_second, slowdownArg);
     // OutputDebugString(final_result);
+    std::wstring num = std::to_wstring(line_num++);
+    auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+    auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Slowing down Video... "));
+
+    console_output.push_back(consoleOut);
+    console_output.push_back(SysAllocString(SELECTED_VIDEOFILENAME_MACRO));
+
+    LINES = (int)(console_output.size());
+    SendMessage(console_display, WM_PAINT, NULL, NULL);
+    SendMessage(console_display, WM_SIZE, NULL, NULL);
+    ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+    ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 
 
     //char* command = _com_util::ConvertBSTRToString(final_result);
@@ -1960,6 +2041,15 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
     if (response == IDOK)
     {
         if (dlgOpen.m_bstrName == NULL) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - No Video Selected [Previous Slo Mo] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
         std::wstring rawDLG(dlgOpen.m_bstrName);
@@ -1971,7 +2061,16 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
             }
         }
         auto video_root = SysAllocString(rawDLG.substr(0, slash).c_str());
-        if (VarBstrCmp(video_root, workspacePlusSlowedDown, NULL,NULL) != 1) {
+        if ((int)(VarBstrCmp(video_root, workspacePlusSlowedDown, NULL,NULL) != 1)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - Video not in correct Folder[Previous Slo Mo] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
         hr = m_2spWMPPlayer->put_URL(dlgOpen.m_bstrName);
@@ -2000,7 +2099,18 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
         auto normalVideoOne = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\MP4Converted\\"));
         auto normalVideoTwo = Concat(normalVideoOne, SysAllocString(filename_naked.c_str()));
         auto normalVideoFinal = Concat(normalVideoTwo, SysAllocString(L"_normal.mp4"));
-
+        if (!PathFileExists(normalVideoFinal)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Warning: No matching video[Previous Slo Mo] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
 
         hr = m_spWMPPlayer->put_URL(normalVideoFinal);
         SELECTED_VIDEO_MACRO = SysAllocString(normalVideoFinal);
@@ -2017,3 +2127,34 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
     }
     return 0;
 }
+/*LRESULT InsertSpaces(BSTR file) {
+    Concat(BSTR a, BSTR b)
+    {
+        auto lengthA = SysStringLen(a);
+        auto lengthB = SysStringLen(b);
+
+        auto result = SysAllocStringLen(NULL, lengthA + lengthB);
+
+        memcpy(result, a, lengthA * sizeof(OLECHAR));
+        memcpy(result + lengthA, b, lengthB * sizeof(OLECHAR));
+
+        result[lengthA + lengthB] = 0;
+        return result;
+    }
+
+    BSTR CWMPHost::extract_filename(BSTR path)
+    {
+        std::wstring wstr(path);
+        size_t finalBackSlash = 0;
+        size_t len = wstr.length();
+        for (size_t i = 0; i < len; i++) {
+            if (wstr[i] == L'\\') {
+                finalBackSlash = i;
+            }
+        }
+        std::wstring retString = wstr.substr(finalBackSlash + 1);
+        BSTR bstr = SysAllocString(retString.c_str());
+
+        return bstr;
+    
+}*/

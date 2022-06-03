@@ -56,7 +56,6 @@ public:
         COMMAND_ID_HANDLER(ID_WMPPLAYER_UIMODE, OnWMPPlayerUIMode)
         COMMAND_ID_HANDLER(ID_WMPPLAYER2_STRETCHTOFIT, OnWMPPlayer2StretchToFit)
        
-        COMMAND_ID_HANDLER(ID_PLAYSLOMO, PlaySlomo)
         COMMAND_ID_HANDLER(ID_TRIMVIDEO, TrimVideo)
         MESSAGE_HANDLER(WM_COMMAND, handle_object_messaages)
 
@@ -90,11 +89,8 @@ public:
     //LRESULT FowardMsgToWMP(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT TrimVideo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
 
-    LRESULT PlaySlomo(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWndCtl */, BOOL& /* bHandled */);
     LRESULT OnFullScreen(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */);
     LRESULT handle_object_messaages(UINT  uMsg, WPARAM  wParam, LPARAM  lParam, BOOL& bHandled);
-    LRESULT registerPopupClass(HINSTANCE hInst);
-    LRESULT displayPopup(HWND hwnd);
     LRESULT OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /*codeNotify*/);
     LRESULT playPreviousSlomoProc();
 
