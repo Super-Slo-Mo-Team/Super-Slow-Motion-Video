@@ -238,9 +238,9 @@ torch::Tensor VideoProcessor::fileToTensor(string file){
     img = torch::cat({img,R,G,B},0);
 
     // TODO: implement and test
-    // std::vector<double> norm_mean = {0.429, 0.431, 0.397};
-    // std::vector<double> norm_std = {1, 1, 1};
-    // img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
+    std::vector<double> norm_mean = {0.429, 0.431, 0.397};
+    std::vector<double> norm_std = {1, 1, 1};
+    img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
 
     return img.unsqueeze(0);
 }
@@ -324,9 +324,9 @@ vector<char> VideoProcessor::tensorToYUV(torch::Tensor img) {
     img.squeeze_();
     
     // TODO: implement and test
-    // std::vector<double> norm_mean = {-0.429, -0.431, -0.397};
-    // std::vector<double> norm_std = {1, 1, 1};
-    // img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
+    std::vector<double> norm_mean = {-0.429, -0.431, -0.397};
+    std::vector<double> norm_std = {1, 1, 1};
+    img = torch::data::transforms::Normalize<>(norm_mean, norm_std)(img);
 
     auto R = img[0];
     auto G = img[1];
