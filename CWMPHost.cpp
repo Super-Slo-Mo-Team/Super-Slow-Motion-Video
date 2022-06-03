@@ -183,7 +183,7 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
 
     // Create an Edit control
     RECT rc = { 240, 0, 200, 48 };
-    updown_box = CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", 0,
+    updown_box = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", 0,
         WS_CHILD | WS_VISIBLE, rc.left, rc.top, rc.right, rc.bottom,
         m_hWnd, (HMENU)IDC_EDIT, g_hInst, 0);
 
@@ -211,6 +211,8 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         NULL);
     // Explicitly attach the Updown control to its 'buddy' edit control
     SendMessage(updown_control, UDM_SETBUDDY, (WPARAM)updown_box, 0);
+    SendMessage(updown_control, UDM_SETRANGE, 0, MAKELPARAM(10, 1));
+    SendMessage(updown_control, UDM_SETPOS, 0, 1);
     WNDCLASS wc{};
     wc.hInstance = (HINSTANCE)(::GetWindowLongPtr(m_hWnd, GWLP_HINSTANCE));
     wc.lpszClassName = L"scroll_window";
@@ -1943,9 +1945,7 @@ LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 }
 LRESULT CWMPHost::playPreviousSlomoProc() {
-    if (SELECTED_VIDEO_MACRO2 == NULL) {
-        return 0;
-    }
+    
     HRESULT      hr;
     CComPtr<IWMPPlayer2> spWMPPlayer;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
@@ -1959,6 +1959,21 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
     auto response = dlgOpen.DoModal(m_hWnd);
     if (response == IDOK)
     {
+        if (dlgOpen.m_bstrName == NULL) {
+            return 0;
+        }
+        std::wstring rawDLG(dlgOpen.m_bstrName);
+        size_t slash = 0;
+        size_t len = rawDLG.length();
+        for (size_t i = 0; i < len; i++) {
+            if (rawDLG[i] == L'\\') {
+                slash = i;
+            }
+        }
+        auto video_root = SysAllocString(rawDLG.substr(0, slash).c_str());
+        if (VarBstrCmp(video_root, workspacePlusSlowedDown, NULL,NULL) != 1) {
+            return 0;
+        }
         hr = m_2spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         auto path = SysAllocString(dlgOpen.m_bstrName);
         SELECTED_VIDEO_MACRO2 = path;
@@ -1974,7 +1989,7 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
 
         std::wstring wstr(SELECTED_VIDEOFILENAME_MACRO2);
         size_t period = 0;
-        size_t len = wstr.length();
+        len = wstr.length();
         for (size_t i = 0; i < len; i++) {
             if (wstr[i] == L'.') {
                 period = i;
