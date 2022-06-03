@@ -2112,6 +2112,30 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
             ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
+        if (!PathFileExists(dlgOpen.m_bstrName)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Video Does not exist [Previous Slo Mo] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
+        if (containsSpaces(dlgOpen.m_bstrName)) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Error - Choose video with no spaces [Previous Slo Mo] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
         std::wstring rawDLG(dlgOpen.m_bstrName);
         size_t slash = 0;
         size_t len = rawDLG.length();
