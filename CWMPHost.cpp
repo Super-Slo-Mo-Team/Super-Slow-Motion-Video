@@ -165,11 +165,11 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         if (selected_folder_macro == NULL) {
             selected_folder_macro = SysAllocString(L"C:");
         }
-        if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
+        else if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
             ErrorExit(L"Choose a folder with no spaces");
             return 0;
         }
-        if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
+        else if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
             auto cColonDirect = Concat(SysAllocString(L"C:\\"), SysAllocString(dlgOpen.m_bstrName));
             CreateDirectory(SysAllocString(cColonDirect), NULL);
             selected_folder_macro = SysAllocString(cColonDirect);
@@ -1145,7 +1145,7 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
         if (SysAllocString(dlgOpen.m_bstrName) == NULL) {
             selected_folder_macro = SysAllocString(L"C:");
         }
-        if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
+        else if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
             std::wstring num = std::to_wstring(line_num++);
             auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
             auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Choose folder with no spaces"));
@@ -1162,7 +1162,7 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
             ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
             return 0;
         }
-        if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
+        else if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
             auto cColonDirect = Concat(SysAllocString(L"C:\\"), SysAllocString(dlgOpen.m_bstrName));
             CreateDirectory(SysAllocString(cColonDirect), NULL);
             selected_folder_macro = SysAllocString(cColonDirect);
@@ -1421,7 +1421,17 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
     CreateDirectory((LPCWSTR)mkdirTrimmeed, NULL);
 
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
+    std::wstring num = std::to_wstring(line_num++);
+    auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+    auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"] Video Succesfully trimed"));
+    console_output.push_back(consoleOut);
+    LINES = (int)(console_output.size());
+    SendMessage(console_display, WM_PAINT, NULL, NULL);
+    SendMessage(console_display, WM_SIZE, NULL, NULL);
+    ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+    ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
     return 0;
+
 }
 //BOOL CWMPHost::OnInitDialog(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lParam */, BOOL& /* bHandled */)
 //{
@@ -2203,7 +2213,6 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
         hr = m_spWMPPlayer.QueryInterface(&spWMPPlayer);
         if (FAILMSG(hr))
             return 0;
-
         if (FAILMSG(hr))
             return 0;
         hr = spWMPPlayer->put_stretchToFit(VARIANT_TRUE);
