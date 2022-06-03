@@ -62,6 +62,7 @@
 #define IDD_UPDOWNDIALOG                144
 #define IDI_ICON1                       147
 #define IDD_SAVEAS_DIALOG				148
+#define IDD_FILEOPENPREVIOUSSLOMO_DIALOG 149
 
 #define IDC_BUTTON_UPDOWN               1015
 
