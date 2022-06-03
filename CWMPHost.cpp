@@ -1298,10 +1298,22 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
             period = i;
         }
     }
-    std::wstring retString = wstr.substr(0, period);
+    /*std::wstring itr(savename);
+    std::wstring stringBeforeSpace;
+    std::wstring stringAfterSpace;
+    std::wstring finalSaveName;
+    
+    size_t space = 0;
+    len = itr.length();
+    for (size_t i = 0; i < len; i++) {
+        if (wstr[i] == L' ') {
+            stringBeforeSpace = itr.substr(0, space);
+            stringAfterSpace = itr.substr(space);
+            len++;
+            i++;
+        }
+    }*/
     std::wstring extensionwstr = wstr.substr(period);
-
-
     BSTR extension = SysAllocString(extensionwstr.c_str());
 
 
@@ -1385,6 +1397,9 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
     CloseHandle(hStdErrWr);
     return 0;
     */
+    if (SELECTED_VIDEO_MACRO == NULL) {
+        return 0;
+    }
     CComPtr<IWMPPlayer2> spWMPPlayer1;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
     VARIANT_BOOL fvalue = VARIANT_TRUE;
