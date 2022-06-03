@@ -1943,14 +1943,21 @@ LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 }
 LRESULT CWMPHost::playPreviousSlomoProc() {
+    if (SELECTED_VIDEO_MACRO2 == NULL) {
+        return 0;
+    }
     HRESULT      hr;
+    CComPtr<IWMPPlayer2> spWMPPlayer;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
+
     auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
-   // auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
+    // auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
 
     CreateDirectory(workspacePlusSlowedDown, NULL);
     COpenPreviousSloMoDlg dlgOpen(workspacePlusSlowedDown);
-    if (dlgOpen.DoModal(m_hWnd) == IDOK)
+
+    auto response = dlgOpen.DoModal(m_hWnd);
+    if (response == IDOK)
     {
         hr = m_2spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         auto path = SysAllocString(dlgOpen.m_bstrName);
@@ -1964,19 +1971,33 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
         if (FAILMSG(hr))
             return 0;
         hr = spWMPPlayer2->put_stretchToFit(VARIANT_TRUE);
-       
-        /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
-        auto path = SysAllocString(dlgOpen.m_bstrName);
-        SELECTED_VIDEO_MACRO2 = path;
-        SELECTED_VIDEOFILENAME_MACRO2 = extract_filename(path);
 
-        hr = m_2spWMPPlayer.QueryInterface(&spWMPPlayer2);
+        std::wstring wstr(SELECTED_VIDEOFILENAME_MACRO2);
+        size_t period = 0;
+        size_t len = wstr.length();
+        for (size_t i = 0; i < len; i++) {
+            if (wstr[i] == L'.') {
+                period = i;
+            }
+        }
+
+        std::wstring filename_naked = wstr.substr(0, period);
+        auto normalVideoOne = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\MP4Converted\\"));
+        auto normalVideoTwo = Concat(normalVideoOne, SysAllocString(filename_naked.c_str()));
+        auto normalVideoFinal = Concat(normalVideoTwo, SysAllocString(L"_normal.mp4"));
+
+
+        hr = m_spWMPPlayer->put_URL(normalVideoFinal);
+        SELECTED_VIDEO_MACRO = SysAllocString(normalVideoFinal);
+        SELECTED_VIDEOFILENAME_MACRO = extract_filename(path);
+
+        hr = m_spWMPPlayer.QueryInterface(&spWMPPlayer);
         if (FAILMSG(hr))
             return 0;
 
         if (FAILMSG(hr))
             return 0;
-        hr = spWMPPlayer2->put_stretchToFit(VARIANT_TRUE);*/
+        hr = spWMPPlayer->put_stretchToFit(VARIANT_TRUE);
 
     }
     return 0;
