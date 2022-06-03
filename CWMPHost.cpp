@@ -1256,15 +1256,16 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
     }
     CComBSTR    m_bstrValue;
     CStringDlg dlgString(L"Trim Video", m_bstrValue);
-    CComBSTR   start, end;
+    CComBSTR   start, end, savename;
     auto response = dlgString.DoModal(m_hWnd);
     if (response == IDCANCEL) {
         return 0;
     }
     if (response == IDOK)
     {
-        start = dlgString.m_bstrValue1;
-        end = dlgString.m_bstrValue2;
+        start = dlgString.m_bstrValue;
+        end = dlgString.m_bstrValue1;
+        savename = dlgString.m_bstrValue2;
         if (start == ATL::CComBSTR(L"") || end == ATL::CComBSTR(L"")) {
             return 0;
         }
@@ -1287,8 +1288,7 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
 
     auto output_file_folder = Concat(time_end_space, SysAllocString(selected_folder_macro));
 
-    auto output_file_folder_with_slash = Concat(output_file_folder, SysAllocString(L"\\Trimmed"));
-    auto output_file_folder_with_slash_at_end = Concat(output_file_folder, SysAllocString(L"\\"));
+    auto output_file_folder_with_slash = Concat(output_file_folder, SysAllocString(L"\\Trimmed\\"));
 
     std::wstring wstr(video_name);
     size_t period = 0;
@@ -1302,16 +1302,16 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
     std::wstring extensionwstr = wstr.substr(period);
 
 
-    BSTR file_wo_mp4 = SysAllocString(retString.c_str());
     BSTR extension = SysAllocString(extensionwstr.c_str());
 
 
 
-    auto output_file_name = Concat(output_file_folder_with_slash_at_end, file_wo_mp4);
+    auto output_file_name = Concat(output_file_folder_with_slash, SysAllocString(savename));
 
     auto penultimate = Concat(output_file_name, SysAllocString(L"_trimmed"));
     auto final_result = Concat(penultimate, SysAllocString(extension));
-    CreateDirectory((LPCWSTR)output_file_folder_with_slash, NULL);
+    auto mkdirTrimmeed = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\Trimmed"));
+    CreateDirectory((LPCWSTR)mkdirTrimmeed, NULL);
 
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
     return 0;
@@ -1928,6 +1928,8 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
     HRESULT      hr;
     CComPtr<IWMPPlayer2> spWMPPlayer2;
     auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
+   // auto workspacePlusSlowedDown = Concat(SysAllocString(selected_folder_macro), SysAllocString(L"\\SlowedDownVideos"));
+
     CreateDirectory(workspacePlusSlowedDown, NULL);
     COpenPreviousSloMoDlg dlgOpen(workspacePlusSlowedDown);
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
@@ -1937,8 +1939,6 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
         SELECTED_VIDEO_MACRO2 = path;
         SELECTED_VIDEOFILENAME_MACRO2 = extract_filename(path);
 
-
-
         hr = m_2spWMPPlayer.QueryInterface(&spWMPPlayer2);
         if (FAILMSG(hr))
             return 0;
@@ -1946,6 +1946,19 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
         if (FAILMSG(hr))
             return 0;
         hr = spWMPPlayer2->put_stretchToFit(VARIANT_TRUE);
+       
+        /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
+        auto path = SysAllocString(dlgOpen.m_bstrName);
+        SELECTED_VIDEO_MACRO2 = path;
+        SELECTED_VIDEOFILENAME_MACRO2 = extract_filename(path);
+
+        hr = m_2spWMPPlayer.QueryInterface(&spWMPPlayer2);
+        if (FAILMSG(hr))
+            return 0;
+
+        if (FAILMSG(hr))
+            return 0;
+        hr = spWMPPlayer2->put_stretchToFit(VARIANT_TRUE);*/
 
     }
     return 0;

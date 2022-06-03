@@ -152,14 +152,19 @@ class CStringDlg : public CDialogImpl<CStringDlg>
             SetWindowText(m_bstrTitle);
         }
 
+        if (m_bstrValue)
+        {
+            SetDlgItemText(IDC_STRING_EDIT1, m_bstrValue);
+
+        }
         if (m_bstrValue1)
         {
-            SetDlgItemText(IDC_STRING_EDIT1, m_bstrValue1);
+            SetDlgItemText(IDC_STRING_EDIT2, m_bstrValue1);
 
         }
         if (m_bstrValue2)
         {
-            SetDlgItemText(IDC_STRING_EDIT2, m_bstrValue2);
+            SetDlgItemText(IDC_STRING_EDIT3, m_bstrValue2);
 
         }
 
@@ -172,8 +177,10 @@ class CStringDlg : public CDialogImpl<CStringDlg>
     }
     LRESULT OnEndDialog(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
     {
-        GetDlgItemText(IDC_STRING_EDIT1, m_bstrValue1.m_str);
-        GetDlgItemText(IDC_STRING_EDIT2, m_bstrValue2.m_str);
+        GetDlgItemText(IDC_STRING_EDIT1, m_bstrValue.m_str);
+        GetDlgItemText(IDC_STRING_EDIT2, m_bstrValue1.m_str);
+        GetDlgItemText(IDC_STRING_EDIT3, m_bstrValue2.m_str);
+
 
         EndDialog(wID);
         return 0;

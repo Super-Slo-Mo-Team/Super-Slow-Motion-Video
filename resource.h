@@ -9,8 +9,8 @@
 #define IDR_MENU1                       202
 #define IDC_FILEOPEN_BROWSE             202
 #define IDC_STRING_EDIT1                203
-#define IDC_STRING_EDIT2                215
-#define IDC_STRING_EDIT3                215
+#define IDC_STRING_EDIT2                220
+#define IDC_STRING_EDIT3                221
 
 #define IDC_STRING_SAVE					218
 #define IDI_ICONALPHA                   204
