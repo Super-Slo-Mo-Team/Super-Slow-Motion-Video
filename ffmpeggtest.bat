@@ -1,2 +1,2 @@
 @echoo off
-ffmpeg -ss %1 -to %2 -i %3 -c copy %4
+ffmpeg -ss %1 -i %2  -c:v libx264 -crf 18 -to %3 -c:a copy %4

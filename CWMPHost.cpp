@@ -1257,10 +1257,11 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
     CComBSTR    m_bstrValue;
     CStringDlg dlgString(L"Trim Video", m_bstrValue);
     CComBSTR   start, end;
-    if (dlgString.DoModal(m_hWnd) == IDCANCEL) {
+    auto response = dlgString.DoModal(m_hWnd);
+    if (response == IDCANCEL) {
         return 0;
     }
-    if (dlgString.DoModal(m_hWnd) == IDOK)
+    if (response == IDOK)
     {
         start = dlgString.m_bstrValue1;
         end = dlgString.m_bstrValue2;
@@ -1272,19 +1273,23 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
     CString solutionCString = MY_SOLUTIONDIR;
 
     //ffmpeg -ss 00:01:00 -to 00:02:00 -i input.mp4 -c copy output.mp4
+    //ffmpeg -ss 00:00:20 -i sample-mp4-file.mp4 -c:v libx264 -crf 18 -to 00:01:00 -c:a copy output3.mp4
     auto withK = Concat(SysAllocString(L"/k "), solutionCString.AllocSysString());
     auto begin = Concat(withK, SysAllocString(L"\\ffmpeggtest.bat "));
     auto time_start = Concat(begin, SysAllocString(start));
     auto time_start_space = Concat(SysAllocString(time_start), SysAllocString(L" "));
-    auto time_end = Concat(time_start_space, SysAllocString(end));
-    auto time_end_space = Concat(SysAllocString(time_end), SysAllocString(L" "));
-
-    auto input_file_name = Concat(time_end_space, SysAllocString(video_file_and_path));
+    auto input_file_name = Concat(time_start_space, SysAllocString(video_file_and_path));
     auto input_file_name_space = Concat(SysAllocString(input_file_name), SysAllocString(L" "));
 
-    auto output_file_folder = Concat(input_file_name_space, SysAllocString(selected_folder_macro));
+    auto time_end = Concat(input_file_name_space, SysAllocString(end));
+    auto time_end_space = Concat(SysAllocString(time_end), SysAllocString(L" "));
 
-    auto output_file_folder_with_slash = Concat(output_file_folder, SysAllocString(L"\\"));
+
+    auto output_file_folder = Concat(time_end_space, SysAllocString(selected_folder_macro));
+
+    auto output_file_folder_with_slash = Concat(output_file_folder, SysAllocString(L"\\Trimmed"));
+    auto output_file_folder_with_slash_at_end = Concat(output_file_folder, SysAllocString(L"\\"));
+
     std::wstring wstr(video_name);
     size_t period = 0;
     size_t len = wstr.length();
@@ -1302,10 +1307,11 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
 
 
 
-    auto output_file_name = Concat(output_file_folder_with_slash, file_wo_mp4);
+    auto output_file_name = Concat(output_file_folder_with_slash_at_end, file_wo_mp4);
 
     auto penultimate = Concat(output_file_name, SysAllocString(L"_trimmed"));
     auto final_result = Concat(penultimate, SysAllocString(extension));
+    CreateDirectory((LPCWSTR)output_file_folder_with_slash, NULL);
 
     ShellExecute(NULL, _T("open"), _T("cmd.exe"), final_result, NULL, SW_SHOW);
     return 0;
@@ -1517,7 +1523,11 @@ LRESULT CWMPHost::OnUpDownOk(HWND /*hWnd*/, int /*id*/, HWND /*hWndCtl*/, UINT /
 
     if (FAILMSG(hr))
         return 0;
-
+    SELECTED_VIDEO_MACRO = argumentTwoMoveMP4ConvertedFinal; //name and path
+    SELECTED_VIDEO_MACRO2 = argumentTwoMoveSlowDownFinal;
+    SELECTED_VIDEOFILENAME_MACRO = extract_filename(argumentTwoMoveMP4ConvertedFinal);//just the name
+    SELECTED_VIDEOFILENAME_MACRO2 = extract_filename(argumentTwoMoveSlowDownFinal);
+    SELECTED_SLOWDOWN_MACRO;
 
     return 0;
 
