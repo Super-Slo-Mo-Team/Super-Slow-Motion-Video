@@ -174,10 +174,10 @@ def main():
     if args.model == 'Interpolation':
         interpolationModel = UNet()
         interpolationModel.load_state_dict(torch.load(args.checkpoint)['state_dict'])
-        torch.jit.script(interpolationModel).save('..\\..\\..\\model\\checkpoints\\traced_interpolation_model.pt')
+        torch.jit.script(interpolationModel).save(INTRP_MODEL_PATH)
     elif args.model == 'BackWarp':
         backWarp = BackWarp((args.width, args.height), torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'))
-        torch.jit.script(backWarp).save('..\\..\\..\\model\\checkpoints\\traced_backwarp_model.pt')
+        torch.jit.script(backWarp).save(BACKWARP_MODEL_PATH)
     else:
         print ('Invalid model arg. Exiting.')
 
