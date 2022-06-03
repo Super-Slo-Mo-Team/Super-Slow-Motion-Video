@@ -48,7 +48,7 @@ void FlowVectorService::startService() {
             cout << "FVS: Received request to break " << endl;
             break;
         } else {
-            cout << "FVS: Received request to read frame " << frameIndex << endl;
+          //  cout << "FVS: Received request to read frame " << frameIndex << endl;
         }
         
         // generate flow frame to be sent over IPC

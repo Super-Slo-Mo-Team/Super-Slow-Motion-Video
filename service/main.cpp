@@ -45,6 +45,8 @@ int main(int argc, char* argv[]) {
     }
 
     // make all temp directories (ROOT_PATH, YUV_PATH, FLO_PATH)
+    const boost::filesystem::path path(ROOT_PATH);
+    boost::filesystem::remove_all(path);
     _mkdir(ROOT_PATH);
     _mkdir(YUV_PATH);
     _mkdir(OUT_PATH);
@@ -76,7 +78,6 @@ int main(int argc, char* argv[]) {
     //_rmdir(ROOT_PATH);
     //_rmdir(YUV_PATH);
     //_rmdir(FLO_PATH);
-    const boost::filesystem::path path(ROOT_PATH);
     boost::filesystem::remove_all(path);
 
     return EXIT_SUCCESS;
