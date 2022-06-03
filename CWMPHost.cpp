@@ -606,6 +606,9 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
     
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
+        if (dlgOpen.m_bstrName == NULL) {
+            return 0;
+        }
         hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         auto path = SysAllocString(dlgOpen.m_bstrName);
         SELECTED_VIDEO_MACRO = path;
