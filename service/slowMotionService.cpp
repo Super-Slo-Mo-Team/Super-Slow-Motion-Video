@@ -202,17 +202,9 @@ void SlowMotionService::startService() {
             g_I1_F_t_1.to(device); 
             
             // refine interpolation and generate soft visibility maps
-            // TODO: do these need to be concatenated then placed as a single tensor into the vector??
+            torch::Tensor interpIn = torch::cat({I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0}, 1);
             std::vector<torch::jit::IValue> interpolationInput;
-            interpolationInput.push_back(I0);
-            interpolationInput.push_back(I1);
-            interpolationInput.push_back(F_0_1);
-            interpolationInput.push_back(F_1_0);
-            interpolationInput.push_back(F_t_1);
-            interpolationInput.push_back(F_t_0);
-            interpolationInput.push_back(g_I1_F_t_1);
-            interpolationInput.push_back(g_I0_F_t_0);
-
+            interpolationInput.push_back(interpIn);
             torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
 
             torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
