@@ -64,6 +64,7 @@ BSTR SELECTED_VIDEO_MACRO2;
 BSTR SELECTED_VIDEOFILENAME_MACRO;//just the name
 BSTR SELECTED_VIDEOFILENAME_MACRO2;
 BSTR SELECTED_SLOWDOWN_MACRO;
+
 int line_num = 2;
 std::vector<const wchar_t*> console_output;
 int LINES = 0;
@@ -91,6 +92,7 @@ INT_PTR CALLBACK UpdownDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 LRESULT CALLBACK ConsoleProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK titleTwo(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BSTR Concat(BSTR a, BSTR b);
+BOOL containsSpaces(BSTR file);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWMPHost::OnFinalMessage(HWND /*hWnd*/)
 {
@@ -160,11 +162,21 @@ LRESULT CWMPHost::OnCreate(UINT /* uMsg */, WPARAM /* wParam */, LPARAM /* lPara
         /*hr = m_spWMPPlayer->put_URL(dlgOpen.m_bstrName);
         if (FAILMSG(hr))
             return 0;*/
-        selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
         if (selected_folder_macro == NULL) {
             selected_folder_macro = SysAllocString(L"C:");
         }
-        OutputDebugString(selected_folder_macro);
+        if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
+            ErrorExit(L"Choose a folder with no spaces");
+            return 0;
+        }
+        if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
+            auto cColonDirect = Concat(SysAllocString(L"C:\\"), SysAllocString(dlgOpen.m_bstrName));
+            CreateDirectory(SysAllocString(cColonDirect), NULL);
+            selected_folder_macro = SysAllocString(cColonDirect);
+        }
+        else {
+            selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
+        }
     }
     if (workspace_dialog == IDCANCEL)
     {
@@ -609,6 +621,18 @@ LRESULT CWMPHost::OnFileOpen(WORD /* wNotifyCode */, WORD /* wID */, HWND /* hWn
     
     if (dlgOpen.DoModal(m_hWnd) == IDOK)
     {
+        if(containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]Choose a file with no spaces [File Open] "));
+            console_output.push_back(consoleOut);
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
         if (dlgOpen.m_bstrName == NULL) {
             std::wstring num = std::to_wstring(line_num++);
             auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
@@ -1121,7 +1145,31 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
         if (SysAllocString(dlgOpen.m_bstrName) == NULL) {
             selected_folder_macro = SysAllocString(L"C:");
         }
-        selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
+        if (containsSpaces(SysAllocString(dlgOpen.m_bstrName))) {
+            std::wstring num = std::to_wstring(line_num++);
+            auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Choose folder with no spaces"));
+            console_output.push_back(consoleOut);
+            num = std::to_wstring(line_num++);
+            bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+            consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]: Current Workspace Folder"));
+            console_output.push_back(consoleOut);
+            console_output.push_back(SysAllocString(selected_folder_macro));
+            LINES = (int)(console_output.size());
+            SendMessage(console_display, WM_PAINT, NULL, NULL);
+            SendMessage(console_display, WM_SIZE, NULL, NULL);
+            ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+            return 0;
+        }
+        if (!PathFileExists(SysAllocString(dlgOpen.m_bstrName))) {
+            auto cColonDirect = Concat(SysAllocString(L"C:\\"), SysAllocString(dlgOpen.m_bstrName));
+            CreateDirectory(SysAllocString(cColonDirect), NULL);
+            selected_folder_macro = SysAllocString(cColonDirect);
+        }
+        else {
+            selected_folder_macro = SysAllocString(dlgOpen.m_bstrName);
+        }
     }
     std::wstring num = std::to_wstring(line_num++);
     auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
@@ -1134,7 +1182,7 @@ LRESULT CWMPHost::OnWMPSelectFolder(WORD /* wNotifyCode */, WORD /* wID */, HWND
     ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
     ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
     return 0;
-    return 0;
+   
 }
 
 
@@ -1304,6 +1352,18 @@ LRESULT CWMPHost::TrimVideo(WORD /* wNotifyCode */, WORD  wID, HWND /* hWndCtl *
         if (start == ATL::CComBSTR(L"") || end == ATL::CComBSTR(L"")) {
             return 0;
         }
+    }
+    if (containsSpaces(SysAllocString(savename))) {
+        std::wstring num = std::to_wstring(line_num++);
+        auto bracketPlusLineNumb = Concat(SysAllocString(L"["), SysAllocString(num.c_str()));
+        auto consoleOut = Concat(bracketPlusLineNumb, SysAllocString(L"]Choose a file with no spaces [Trim Save As] "));
+        console_output.push_back(consoleOut);
+        LINES = (int)(console_output.size());
+        SendMessage(console_display, WM_PAINT, NULL, NULL);
+        SendMessage(console_display, WM_SIZE, NULL, NULL);
+        ::RedrawWindow(console_display, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+        ::RedrawWindow(m_hWnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+        return 0;
     }
 
     CString solutionCString = MY_SOLUTIONDIR;
@@ -1731,7 +1791,7 @@ void ErrorExit(PTSTR lpszFunction)
         (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
     StringCchPrintf((LPTSTR)lpDisplayBuf,
         LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-        TEXT("%s failed with error %d: %s"),
+        
         lpszFunction, dw, lpMsgBuf);
     MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
 
@@ -2127,34 +2187,13 @@ LRESULT CWMPHost::playPreviousSlomoProc() {
     }
     return 0;
 }
-/*LRESULT InsertSpaces(BSTR file) {
-    Concat(BSTR a, BSTR b)
-    {
-        auto lengthA = SysStringLen(a);
-        auto lengthB = SysStringLen(b);
-
-        auto result = SysAllocStringLen(NULL, lengthA + lengthB);
-
-        memcpy(result, a, lengthA * sizeof(OLECHAR));
-        memcpy(result + lengthA, b, lengthB * sizeof(OLECHAR));
-
-        result[lengthA + lengthB] = 0;
-        return result;
-    }
-
-    BSTR CWMPHost::extract_filename(BSTR path)
-    {
-        std::wstring wstr(path);
-        size_t finalBackSlash = 0;
-        size_t len = wstr.length();
-        for (size_t i = 0; i < len; i++) {
-            if (wstr[i] == L'\\') {
-                finalBackSlash = i;
-            }
+BOOL containsSpaces(BSTR file) {
+    std::wstring wstr(file);
+    size_t len = wstr.length();
+    for (size_t i = 0; i < len; i++) {
+        if (wstr[i] == L' ') {
+            return  true;
         }
-        std::wstring retString = wstr.substr(finalBackSlash + 1);
-        BSTR bstr = SysAllocString(retString.c_str());
-
-        return bstr;
-    
-}*/
+    }
+    return false;
+}
