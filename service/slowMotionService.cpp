@@ -207,22 +207,19 @@ void SlowMotionService::startService() {
             interpolationInput.push_back(interpIn);
             torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
 
-            torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
-            torch::Tensor F_t_1_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(2,4)}) + F_t_1;
+            torch::Tensor F_t_0_f = interpOut.slice(1, 0, 2) + F_t_0;
+            torch::Tensor F_t_1_f = interpOut.slice(1, 2, 4) + F_t_1;
             
-            torch::Tensor V_t_0 = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(4,5)});
+            torch::Tensor V_t_0 = interpOut.slice(1, 4, 5);
             torch::Tensor V_t_1 = 1 - V_t_0;
 
             // second pass of backwarp network
             backWarpInput.push_back(I0);
             backWarpInput.push_back(F_t_0_f);
-
             torch::Tensor g_I0_F_t_0_f = this->backWarpModel.forward(backWarpInput).toTensor();
             backWarpInput.clear();
-
             backWarpInput.push_back(I1);
             backWarpInput.push_back(F_t_1_f);
-
             torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
             backWarpInput.clear();
 
