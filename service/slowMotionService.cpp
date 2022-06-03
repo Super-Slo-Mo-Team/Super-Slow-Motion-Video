@@ -210,8 +210,7 @@ void SlowMotionService::startService() {
             torch::Tensor F_t_0_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(0,2)}) + F_t_0;
             torch::Tensor F_t_1_f = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(2,4)}) + F_t_1;
             
-            torch::Tensor temp = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(4,5)});
-            torch::Tensor V_t_0 = torch::sigmoid(temp);
+            torch::Tensor V_t_0 = interpOut.index({torch::indexing::Slice(), torch::indexing::Slice(4,5)});
             torch::Tensor V_t_1 = 1 - V_t_0;
 
             // second pass of backwarp network
