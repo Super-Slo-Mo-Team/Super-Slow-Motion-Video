@@ -53,10 +53,8 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
 
     // create frame reader to interface directly with video frames
     videoProcessor = VideoProcessor::GetInstance(inputPath, slowmoFactor);
-    //
-    // FOR FRONT END, CREATES 1X video to display
-    
 
+    // FOR FRONT END, CREATES 1X video to display
     stringstream out;
     out << OUT_PATH << "\\1x.yuv";
     string tempOut = out.str();
@@ -88,20 +86,21 @@ SlowMotionService::SlowMotionService(string inputPath, int slowmoFactor, int out
 
     system(cmd.c_str());
 
+    // 
+    // UNCOMMENT to use interpolation model
+    //
+    // try {
+    //     //stringstream command;
+    //     //command << "python3 " << MODEL_SCRIPT << " --model Interpolation --checkpoint " << INTERPOLATION_CHECKPOINT_PATH;
+    //     //system(command.str().c_str());
+    //     interpolationModel = torch::jit::load(INTERPOLATION_MODEL_PATH);
+    // } catch (const c10::Error& e) {
+    //     cout << "Error loading Frame Interpolation model\n" << endl;
+    //     exit(EXIT_FAILURE);
+    // }
+    // cout << "Interpolation Model is loaded." << endl;
 
-     
-    // initialize models from torchscript
-    /*try {
-        //stringstream command;
-        //command << "python3 " << MODEL_SCRIPT << " --model Interpolation --checkpoint " << INTERPOLATION_CHECKPOINT_PATH;
-        //system(command.str().c_str());
-        interpolationModel = torch::jit::load(INTERPOLATION_MODEL_PATH);
-    } catch (const c10::Error& e) {
-        cout << "Error loading Frame Interpolation model\n" << endl;
-        exit(EXIT_FAILURE);
-    }
-    cout << "Interpolation Model is loaded." << endl;
-    */
+    // initialize backwarp model
     try {
         stringstream command;
         command << "python3 " << MODEL_SCRIPT << " --model BackWarp --width " << videoProcessor->getVideoWidth() << " --height " << videoProcessor->getVideoHeight();
@@ -140,9 +139,9 @@ void SlowMotionService::startService() {
     int currFrameIndex = 0;
 
     while (currFrameIndex < videoProcessor->getVideoFrameCount() * slowmoFactor - slowmoFactor) {
-
         float percent = float(float(currFrameIndex)/slowmoFactor) / float(videoProcessor->getVideoFrameCount())*100;
         cout << "Working on frame " << currFrameIndex/slowmoFactor << "/" << videoProcessor->getVideoFrameCount() << " (" << int(percent) << " %)" << endl;
+        
         // send request with frame number
         s_send(flowRequester, to_string(currFrameIndex / slowmoFactor));
         
@@ -182,10 +181,11 @@ void SlowMotionService::startService() {
         vector<torch::Tensor> framePair = videoProcessor->getFramePair(currFrameIndex);       
         torch::Tensor I0 = framePair[0].to(device);
         torch::Tensor I1 = framePair[1].to(device);
+        
         // generate intermediate frames
         for(float i = 1; i != slowmoFactor; i++) {
-            float t = float(i) / slowmoFactor;
             // calculate intermediate vector flows
+            float t = float(i) / slowmoFactor;
             torch::Tensor F_t_0 = torch::add(((-t*(1-t)) * F_0_1), ((t*t) * F_1_0));
             torch::Tensor F_t_1 = torch::add((((1-t)*(1-t)) * F_0_1), ((-t*(1-t)) * F_1_0));
             F_t_0.to(device);
@@ -209,36 +209,42 @@ void SlowMotionService::startService() {
 
             F_t_0 = F_t_0.to(device);
             F_t_1 = F_t_1.to(device);
-            /*
-            // refine interpolation and generate soft visibility maps
-            torch::Tensor interpIn = torch::cat({I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0}, 1);
-            std::vector<torch::jit::IValue> interpolationInput;
-            interpolationInput.push_back(interpIn);
-            torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
-            torch::Tensor F_t_0_f = interpOut.slice(1, 0, 2) + F_t_0;
-            torch::Tensor F_t_1_f = interpOut.slice(1, 2, 4) + F_t_1;
-            interpolationInput.clear();
+            
+            // 
+            // UNCOMMENT to use interpolation model
+            //
+            // // refine interpolation and generate soft visibility maps
+            // torch::Tensor interpIn = torch::cat({I0, I1, F_0_1, F_1_0, F_t_1, F_t_0, g_I1_F_t_1, g_I0_F_t_0}, 1);
+            // std::vector<torch::jit::IValue> interpolationInput;
+            // interpolationInput.push_back(interpIn);
+            // torch::Tensor interpOut = this->interpolationModel.forward(interpolationInput).toTensor();
+            // torch::Tensor F_t_0_f = interpOut.slice(1, 0, 2) + F_t_0;
+            // torch::Tensor F_t_1_f = interpOut.slice(1, 2, 4) + F_t_1;
+            // interpolationInput.clear();
 
-            torch::Tensor V_t_0 = interpOut.slice(1, 4, 5);
-            torch::Tensor V_t_1 = 1 - V_t_0;
+            // torch::Tensor V_t_0 = interpOut.slice(1, 4, 5);
+            // torch::Tensor V_t_1 = 1 - V_t_0;
            
-            // second pass of backwarp network
-            backWarpInput.push_back(I0);
-            backWarpInput.push_back(F_t_0_f);
-            torch::Tensor g_I0_F_t_0_f = this->backWarpModel.forward(backWarpInput).toTensor();
+            // // second pass of backwarp network
+            // backWarpInput.push_back(I0);
+            // backWarpInput.push_back(F_t_0_f);
+            // torch::Tensor g_I0_F_t_0_f = this->backWarpModel.forward(backWarpInput).toTensor();
 
-            backWarpInput.clear();
-            backWarpInput.push_back(I1);
-            backWarpInput.push_back(F_t_1_f);
-            torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
-            backWarpInput.clear();
+            // backWarpInput.clear();
+            // backWarpInput.push_back(I1);
+            // backWarpInput.push_back(F_t_1_f);
+            // torch::Tensor g_I1_F_t_1_f = this->backWarpModel.forward(backWarpInput).toTensor();
+            // backWarpInput.clear();
           
-            // fuse warped images to create an interpolated frame
-            torch::Tensor Ft_p = ((1-t) * V_t_0 * g_I0_F_t_0_f + t * V_t_1 * g_I1_F_t_1_f ) / ((1-t) * V_t_0 + t * V_t_1);
-
-            */
+            //
+            // UNCOMMENT line 244 to do the interpolation step with model
+            // COMMENT line 245 to do the interpolation step without the model
+            //
+            // // fuse warped images to create an interpolated frame
+            // torch::Tensor Ft_p = ((1-t) * V_t_0 * g_I0_F_t_0_f + t * V_t_1 * g_I1_F_t_1_f ) / ((1-t) * V_t_0 + t * V_t_1);
             torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
             Ft_p = Ft_p.to(device);
+            
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
 
             stringstream pathBuilder;
@@ -255,6 +261,7 @@ void SlowMotionService::startService() {
     // send termination request
     s_send(flowRequester, to_string(TERMINATION_MSG));
 
+    // create output file
     stringstream out;
     out << OUT_PATH << "\\tmp.yuv";
     string tempOut = out.str();
@@ -276,7 +283,7 @@ void SlowMotionService::startService() {
             writeOut.write(memblock, size);
         }
         else {
-            cout << "Could not open" << filename << endl;
+            cout << "SMS: Could not open " << filename << endl;
         }
     }
     writeOut.close();
@@ -286,5 +293,5 @@ void SlowMotionService::startService() {
     string cmd = ffmpegCommand.str();
 
     system(cmd.c_str());
-    cout << "Video Has Been Generated" << endl;
+    cout << "SMS: Video has been generated" << endl;
 }
