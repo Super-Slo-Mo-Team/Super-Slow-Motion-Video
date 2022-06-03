@@ -191,8 +191,8 @@ void SlowMotionService::startService() {
             backWarpInput.clear();
 
             // fuse warped images to create an interpolated frame
-            torch::Tensor Ft_p = ((1-t) * V_t_0 * g_I0_F_t_0_f + t * V_t_1 * g_I1_F_t_1_f ) / ((1-t) * V_t_0 + t * V_t_1);
-            // torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
+            // torch::Tensor Ft_p = ((1-t) * V_t_0 * g_I0_F_t_0_f + t * V_t_1 * g_I1_F_t_1_f ) / ((1-t) * V_t_0 + t * V_t_1);
+            torch::Tensor Ft_p = (1-t) * g_I0_F_t_0 + t * g_I1_F_t_1;
 
             vector<char> imgFile = videoProcessor->tensorToYUV(Ft_p);
 
